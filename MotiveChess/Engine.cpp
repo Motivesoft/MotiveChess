@@ -12,20 +12,27 @@
 
 std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers 
 {
-    { "uci", &Engine::uci },
-    { "debug", &Engine::uci },
-    { "isready", &Engine::uci },
-    { "setoption", &Engine::uci },
+    { "uci", &Engine::uciCommand },
+    { "debug", &Engine::debugCommand },
+    { "isready", &Engine::isreadyCommand },
+    { "setoption", &Engine::setoptionCommand },
+    { "register", &Engine::registerCommand },
+    { "ucinewgame", &Engine::ucinewgameCommand },
+    { "position", &Engine::positionCommand },
+    { "go", &Engine::goCommand },
+    { "stop", &Engine::stopCommand },
+    { "ponderhit", &Engine::ponderhitCommand },
+    { "quit", &Engine::quitCommand },
 };
 
-void Engine::initialize() const
+void Engine::initialize()
 {
     DEBUG( "initialize\n" );
 
     // TODO e.g. bitboard initialisation
 }
 
-void Engine::run() const
+void Engine::run()
 {
     DEBUG( "run\n" );
 
@@ -41,9 +48,9 @@ void Engine::run() const
     }
     std::istream& instream = inputFile.has_value() ? infile : std::cin;
 
-    // Read, line by line
+    // Read, line by line until the end or 'quitting' is set
     std::string line;
-    while ( std::getline( instream, line ) )
+    while ( !quitting && std::getline( instream, line ) )
     {
         std::istringstream iss( line );
 
@@ -91,11 +98,6 @@ void Engine::run() const
         {
             commandHandlers[ line ]( *this, line );
         }
-
-        if ( line == "quit" )
-        {
-            break;
-        }
     }
 }
 
@@ -106,7 +108,59 @@ void Engine::next( std::string line )
 
 // UCI commands
 
-void Engine::uci( const Engine& engine, const std::string& arguments )
+void Engine::uciCommand( Engine& engine, const std::string& arguments )
 {
     DEBUG_S( engine, "Processing uci command\n" );
+}
+
+void Engine::debugCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing debug command\n" );
+}
+
+void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing isready command\n" );
+}
+
+void Engine::setoptionCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing setoption command\n" );
+}
+
+void Engine::registerCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing register command\n" );
+}
+
+void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing ucinewgame command\n" );
+}
+
+void Engine::positionCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing position command\n" );
+}
+
+void Engine::goCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing go command\n" );
+}
+
+void Engine::stopCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing stop command\n" );
+}
+
+void Engine::ponderhitCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing ponderhit command\n" );
+}
+
+void Engine::quitCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing quit command\n" );
+
+    engine.quitting = true;
 }
