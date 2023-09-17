@@ -6,12 +6,17 @@
 #include <sstream>
 #include <string>
 
-#define DEBUG_S(engine,...) if( engine.debug ){ fprintf( stderr, __VA_ARGS__ ); }
-#define DEBUG(...) if( debug ){ fprintf( stderr, __VA_ARGS__ ); }
-#define ERROR(...) { fprintf( stderr, __VA_ARGS__ ); }
+#define DEBUG_S(engine,...) if( engine.debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
+#define INFO_S(engine,...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
+#define ERROR_S(engine,...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
+
+#define DEBUG(...) if( debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
+#define INFO(...) if( debug ){ fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
+#define ERROR(...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
 
 std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers 
 {
+    // Standard UCI commands
     { "uci", &Engine::uciCommand },
     { "debug", &Engine::debugCommand },
     { "isready", &Engine::isreadyCommand },
@@ -23,6 +28,9 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
     { "stop", &Engine::stopCommand },
     { "ponderhit", &Engine::ponderhitCommand },
     { "quit", &Engine::quitCommand },
+
+    // Custom commands
+    { "perft", &Engine::quitCommand },
 };
 
 void Engine::initialize()
@@ -111,6 +119,10 @@ void Engine::next( std::string line )
 void Engine::uciCommand( Engine& engine, const std::string& arguments )
 {
     DEBUG_S( engine, "Processing uci command\n" );
+
+    // TODO any further setup?
+
+    engine.idBroadcast( "MotiveChess", "Motivesoft" );
 }
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
@@ -163,4 +175,21 @@ void Engine::quitCommand( Engine& engine, const std::string& arguments )
     DEBUG_S( engine, "Processing quit command\n" );
 
     engine.quitting = true;
+}
+
+void Engine::perftCommand( Engine& engine, const std::string& arguments )
+{
+    DEBUG_S( engine, "Processing perft command\n" );
+
+    engine.quitting = true;
+}
+
+// Broadcast commands
+
+void Engine::idBroadcast( const std::string& name, const std::string& author )
+{
+    DEBUG( "Broadcasting id message\n" );
+
+    std::cout << "id name " << name << std::endl;
+    std::cout << "id author " << author << std::endl;
 }

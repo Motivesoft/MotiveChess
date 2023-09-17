@@ -37,7 +37,7 @@ public:
     void run();
     void next( std::string line );
 
-    // Command handlers
+    // Command handlers - standard UCI commands
     static void uciCommand( Engine& engine, const std::string& arguments );
     static void debugCommand( Engine& engine, const std::string& arguments );
     static void isreadyCommand( Engine& engine, const std::string& arguments );
@@ -49,4 +49,17 @@ public:
     static void stopCommand( Engine& engine, const std::string& arguments );
     static void ponderhitCommand( Engine& engine, const std::string& arguments );
     static void quitCommand( Engine& engine, const std::string& arguments );
+
+    // Command handlers - custom commands
+    static void perftCommand( Engine& engine, const std::string& arguments );
+
+    // Broadcast - standard UCI commands
+    void idBroadcast( const std::string& name, const std::string& author );
+    void uciokBroadcast();
+    void readyokBroadcast();
+    void bestmoveBroadcast();
+    void copyprotectionBroadcast();
+    void registrationBroadcast();
+    void infoBroadcast();
+    void optionBroadcast();
 };
