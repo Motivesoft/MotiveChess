@@ -4,5 +4,11 @@
 #pragma once
 
 #include <iostream>
+#include <string>
+#include <vector>
 
-// TODO: Reference additional headers your program requires here.
+#include "Engine.h"
+
+// Methods
+bool processCommandLine( Engine& engine, const std::string& switchPrefix, const std::vector<std::string>& args );
+

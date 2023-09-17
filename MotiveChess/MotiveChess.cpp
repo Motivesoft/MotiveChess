@@ -3,12 +3,6 @@
 
 #include "MotiveChess.h"
 
-#include <iostream>
-#include <string>
-#include <vector>
-
-bool processCommandLine( const std::vector<std::string>& args );
-
 int main( int argc, char** argv )
 {
 	std::cout << "MotiveChess 0.1" << std::endl;
@@ -19,58 +13,75 @@ int main( int argc, char** argv )
 		args.push_back( argv[ loop ] );
 	}
 
-	if ( processCommandLine( args ) )
-	{
-		// Continue
-	}
-
-	// Exit
-	return 0;
-}
-
-bool processCommandLine( const std::vector<std::string>& args )
-{
 #if _WIN32
 	std::string switchPrefix = "-";
 #elif __linux__
 	std::string switchPrefix = "--";
 #endif
 
-	std::cout << switchPrefix << std::endl;
+	Engine engine;
+	if ( processCommandLine( engine, switchPrefix, args ) )
+	{
+		// Continue
+		engine.initialize();
+		engine.run();
+	}
+	else
+	{
+		std::cout << std::endl << "Arugments:" << std::endl;
+		std::cout << "  " << switchPrefix << "debug             : turn on debug mode" << std::endl;
+		std::cout << "  " << switchPrefix << "input [filename]  : read input from [filename], rather than the console" << std::endl;
+		std::cout << "  " << switchPrefix << "help              : this information" << std::endl;
+	}
 
-	for ( std::vector<std::string>::const_iterator it = args.cbegin(); it != args.cend(); )
+	// Exit
+	return 0;
+}
+
+bool processCommandLine( Engine& engine, const std::string& switchPrefix, const std::vector<std::string>& args )
+{
+	bool success = true;
+
+	for ( std::vector<std::string>::const_iterator it = args.cbegin(); success == true, it != args.cend(); )
 	{
 		if ( (*it).starts_with( switchPrefix ) )
 		{
 			std::string flag = ( *it ).substr( switchPrefix.length() );
-			if ( flag == "debug" || *it == "-d" )
+			if ( flag == "help" )
 			{
-				// TODO Set debug mode
+				success = false;
 			}
-			else if ( flag == "input" || *it == "-i" )
+			if ( flag == "debug" )
+			{
+				engine.setDebug();
+			}
+			else if ( flag == "input" )
 			{
 				if ( it + 1 != args.cend() )
 				{
-					// TODO Set input from file
-					std::string inputFile = *( ++it );
+					it++;
+					engine.setInputFile( *it );
 				}
 				else
 				{
 					std::cerr << "Missing input file: " << std::endl;
+					success = false;
 				}
 			}
 			else
 			{
 				std::cerr << "Unrecognised argument: " << *it << std::endl;
+				success = false;
 			}
 		}
 		else
 		{
 			std::cerr << "Unexpected argument: " << *it << std::endl;
+			success = false;
 		}
 
 		it++;
 	}
 
-	return true;
+	return success;
 }
