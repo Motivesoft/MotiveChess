@@ -8,10 +8,12 @@
 
 #define DEBUG_S(engine,...) if( engine.debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
+#define WARN_S(engine,...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
 #define ERROR_S(engine,...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
 
 #define DEBUG(...) if( debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
-#define INFO(...) if( debug ){ fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
+#define INFO(...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
+#define WARN(...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
 #define ERROR(...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
 
 std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers 
@@ -101,10 +103,14 @@ void Engine::run()
             arguments = line.substr( space + 1 );
         }
 
-        DEBUG( "[%s][%s]\n", command.c_str(), arguments.c_str());
-        if ( commandHandlers.find( line ) != commandHandlers.end() )
+        //DEBUG( "[%s][%s]\n", command.c_str(), arguments.c_str());
+        if ( commandHandlers.find( command ) != commandHandlers.end() )
         {
-            commandHandlers[ line ]( *this, line );
+            commandHandlers[ command ]( *this, arguments );
+        }
+        else
+        {
+            WARN("Ignoring unrecognised command: %s\n", command.c_str());
         }
     }
 }
