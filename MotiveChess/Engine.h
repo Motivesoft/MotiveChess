@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+#include "Board.h"
 #include "GoArguments.h"
 #include "Move.h"
 
@@ -139,8 +140,12 @@ public:
 
     class Search
     {
+    private:
+        std::shared_ptr<Board> board;
+        std::shared_ptr<const GoArguments> goArgs;
+
     public:
-        Search( const std::string& position, const GoArguments& goArgs );
+        Search( Board& board, const GoArguments& goArgs );
 
         void start( const Engine& engine );
     };

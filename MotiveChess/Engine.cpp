@@ -10,7 +10,6 @@
 #include <string>
 
 #include "BitBoard.h"
-#include "Board.h"
 #include "Fen.h"
 #include "GoArguments.h"
 #include "Perft.h"
@@ -445,16 +444,21 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     // Move past "moves"
     details = firstWord( movesString );
 
-    details = firstWord( movesString );
+    // Extract the listed moves
+    details = firstWord( details.second );
     while ( !details.first.empty() )
     {
         moves.push_back( Move( details.first.c_str() ) );
         details = firstWord( details.second );
     }
 
-//    Board* board = Board::createBoard(  );
+    Board* board = Board::createBoard( fenString );
+    for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
+    {
+        board->applyMove( *it );
+    }
 
-    Search search = Search( engine.stagedPosition, goArgs );
+    Search search = Search( *board, goArgs );
     search.start( engine );
 }
 
@@ -746,7 +750,9 @@ void Engine::broadcast( const char* format, ... ) const
 
 // Search 
 
-Engine::Search::Search( const std::string& position, const GoArguments& goArgs )
+Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
+    board( std::make_shared<Board>( board ) ),
+    goArgs( std::make_shared<GoArguments>( goArgs ) )
 {
 
 }
@@ -754,4 +760,17 @@ Engine::Search::Search( const std::string& position, const GoArguments& goArgs )
 void Engine::Search::start( const Engine& engine )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
+    DEBUG_S( engine, "Starting a search" );
+
+    while ( !engine.quitting && !engine.stopThinking )
+    {
+
+    }
+
+    if ( !engine.quitting )
+    {
+        // TODO broadcast bestmove
+    }
+
+    DEBUG_S( engine, "Search completed" );
 }
