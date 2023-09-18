@@ -15,7 +15,9 @@ private:
     bool debug;
     bool quitting;
     std::optional<std::string> inputFile;
-    std::ostream& broadcastStream;
+    FILE* broadcastStream;
+
+    bool uciDebug;
 
     void perftDepth( const std::string& depthString, const std::string& fenString, bool divide );
     void perftFen( const std::string& fenString, bool divide );
@@ -70,12 +72,16 @@ private:
         return trimmed;
     }
 
+    void debuglog( const char* format, ... );
+    void log( const char* level, const char* format, ... );
+
 public:
     Engine() :
         debug( false ),
+        uciDebug( false ),
         quitting( false ),
         inputFile( std::nullopt ),
-        broadcastStream( std::cout )
+        broadcastStream( stdout )
     {
     }
 
@@ -115,6 +121,7 @@ public:
     void bestmoveBroadcast();
     void copyprotectionBroadcast();
     void registrationBroadcast();
-    void infoBroadcast();
+    void infoBroadcast( const char* type, const char* format, va_list args );
+    void infoBroadcast( const char* type, const char* format, ... );
     void optionBroadcast();
 };

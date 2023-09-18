@@ -1,5 +1,6 @@
 #include "Engine.h"
 
+#include <cstdarg>
 #include <fstream>
 #include <istream>
 #include <iostream>
@@ -10,12 +11,15 @@
 #include "Fen.h"
 #include "Perft.h"
 
-#define DEBUG_S(engine,...) if( engine.debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
+#define DEBUG_S(engine,...) if( engine.debug ){ engine.log( "DEBUG", __VA_ARGS__ ); }
+#define INFO_S(engine,...) { engine.log( "INFO", __VA_ARGS__ ); }
+#define WARN_S(engine,...) { engine.log( "WARN ", __VA_ARGS__ ); }
+#define ERROR_S(engine,...) { engine.log( "ERROR", __VA_ARGS__ ); }
 
-#define DEBUG(...) if( debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
-#define INFO(...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
-#define WARN(...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
-#define ERROR(...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
+#define DEBUG(...) if( debug ){ log( "DEBUG", __VA_ARGS__ ); }
+#define INFO(...) { log( "INFO ", __VA_ARGS__ ); }
+#define WARN(...) { log( "WARN ", __VA_ARGS__ ); }
+#define ERROR(...) { log( "ERROR", __VA_ARGS__ ); }
 
 std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 {
@@ -99,14 +103,37 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
     DEBUG_S( engine, "Processing uci command\n" );
 
     // TODO any further setup?
-    // TODO notification of options etc
 
     engine.idBroadcast( "MotiveChess", "Motivesoft" );
+    
+    // TODO notification of options, copy protection etc
+
+    engine.uciokBroadcast();
+
+    // TODO registration?
 }
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
 {
     DEBUG_S( engine, "Processing debug command\n" );
+
+    if ( arguments.empty() )
+    {
+        ERROR_S( engine, "Missing argument" );
+    }
+
+    if ( arguments == "on" )
+    {
+        engine.uciDebug = true;
+    }
+    else if ( arguments == "off" )
+    {
+        engine.uciDebug = true;
+    }
+    else
+    {
+        ERROR_S( engine, "Unrecognised debug option: %s\n", arguments.c_str() );
+    }
 }
 
 void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
@@ -174,7 +201,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 
     if ( commandArguments.first.empty() )
     {
-        ERROR( "Missing perft arguments\n" );
+        ERROR_S( engine, "Missing perft arguments\n" );
         return;
     }
 
@@ -195,7 +222,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
         }
         else
         {
-            ERROR( "Missing filename" );
+            ERROR_S( engine, "Missing filename" );
         }
     }
     else if ( commandArguments.first == "fen" )
@@ -206,7 +233,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
         }
         else
         {
-            ERROR( "Missing FEN string" );
+            ERROR_S( engine, "Missing FEN string" );
         }
     }
     else
@@ -230,12 +257,15 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
 {
     DEBUG( "Broadcasting id message\n" );
 
-    broadcastStream << "id name " << name << std::endl;
-    broadcastStream << "id author " << author << std::endl;
+    fprintf( broadcastStream, "id name %s\n", name.c_str() );
+    fprintf( broadcastStream, "id author %s\n", author.c_str() );
 }
 
 void Engine::uciokBroadcast()
 {
+    DEBUG( "Broadcasting uciok message\n" );
+
+    fprintf( broadcastStream, "uciok\n" );
 }
 
 void Engine::readyokBroadcast()
@@ -254,8 +284,22 @@ void Engine::registrationBroadcast()
 {
 }
 
-void Engine::infoBroadcast()
+void Engine::infoBroadcast( const char* type, const char* format, va_list arg )
 {
+
+    fprintf( broadcastStream, "info %s ", type );
+    vfprintf( broadcastStream, format, arg );
+}
+
+void Engine::infoBroadcast( const char* type, const char* format, ... )
+{
+    va_list arg;
+    va_start( arg, format );
+
+    fprintf( broadcastStream, "info %s ", type );
+    vfprintf( broadcastStream, format, arg );
+
+    va_end( arg );
 }
 
 void Engine::optionBroadcast()
@@ -311,3 +355,29 @@ void Engine::perftFile( const std::string& filename, bool divide )
     }
 }
 
+void Engine::debuglog( const char* format, ... )
+{
+    va_list arg;
+    va_start( arg, format );
+
+    fprintf( stderr, "DEBUG : " );
+    vfprintf( stderr, format, arg );
+
+    va_end( arg );
+}
+
+void Engine::log( const char* level, const char* format, ... )
+{
+    va_list arg;
+    va_start( arg, format );
+
+    fprintf( stderr, "%s : ", level );
+    vfprintf( stderr, format, arg );
+
+    if ( uciDebug )
+    {
+        infoBroadcast( "string", format, arg );
+    }
+
+    va_end( arg );
+}
