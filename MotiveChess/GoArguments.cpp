@@ -1,5 +1,7 @@
 #include "GoArguments.h"
 
+// TODO complete this
+
 GoArguments::GoArguments( std::vector<Move> searchMoves, bool infinite, bool ponder ) :
     searchMoves( searchMoves ),
     infinite( infinite ),

@@ -10,6 +10,7 @@
 #include <string>
 
 #include "BitBoard.h"
+#include "Board.h"
 #include "Fen.h"
 #include "GoArguments.h"
 #include "Perft.h"
@@ -319,42 +320,79 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         }
         else if ( details.first == "wtime" )
         {
+            // Promote the next argument - the value - to the front
             details = firstWord( details.second );
-            // TODO pass details.first as a wtime
+
+            // Capture it
+            builder.setWTime( atoi( details.first.c_str() ) );
+
+            // Move forwards to the next thing
             details = firstWord( details.second );
         }
         else if ( details.first == "btime" )
         {
             details = firstWord( details.second );
+
+            builder.setBTime( atoi( details.first.c_str() ) );
+
+            details = firstWord( details.second );
         }
         else if ( details.first == "winc" )
         {
+            details = firstWord( details.second );
+
+            builder.setWInc( atoi( details.first.c_str() ) );
+
             details = firstWord( details.second );
         }
         else if( details.first == "binc" )
         {
             details = firstWord( details.second );
+
+            builder.setBInc( atoi( details.first.c_str() ) );
+
+            details = firstWord( details.second );
         }
         else if ( details.first == "movestogo" )
         {
+            details = firstWord( details.second );
+
+            builder.setMovesToGo( atoi( details.first.c_str() ) );
+
             details = firstWord( details.second );
         }
         else if ( details.first == "depth" )
         {
             details = firstWord( details.second );
+
+            builder.setDepth( atoi( details.first.c_str() ) );
+
+            details = firstWord( details.second );
         }
         else if ( details.first == "nodes" )
         {
+            details = firstWord( details.second );
+
+            builder.setNodes( atoi( details.first.c_str() ) );
+
             details = firstWord( details.second );
         }
         else if ( details.first == "mate" )
         {
             details = firstWord( details.second );
+
+            builder.setMate( atoi( details.first.c_str() ) );
+
+            details = firstWord( details.second );
         }
         else if ( details.first == "movetime" )
         {
             details = firstWord( details.second );
-        }
+
+            builder.setMoveTime( atoi( details.first.c_str() ) );
+
+            details = firstWord( details.second );
+            }
         else
         {
             ERROR_S( engine, "Ignoring unsupported go option: %s", details.first.c_str() );
@@ -366,6 +404,55 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     GoArguments goArgs = builder.build();
     // TODO Board = board(fen) and then make moves from position statement
     // TODO pass board and goargs to search
+
+    details = firstWord( engine.stagedPosition );
+
+    std::string fenString;
+    std::string movesString;
+    if ( details.first == Fen::startingPositionReference )
+    {
+        fenString = Fen::startingPosition;
+
+        size_t movesIndex = details.second.find( "moves" );
+
+        if ( movesIndex != std::string::npos )
+        {
+            movesString = details.second.substr( movesIndex );
+        }
+    }
+    else if ( details.first == "fen" )
+    {
+        size_t movesIndex = details.second.find( "moves" );
+
+        if ( movesIndex == std::string::npos )
+        {
+            fenString = details.second;
+        }
+        else
+        {
+            fenString = trim( details.second.substr( 0, movesIndex ) );
+            movesString = details.second.substr( movesIndex );
+        }
+    }
+    else
+    {
+        ERROR_S( engine, "Unexpected word in position: %s", details.first.c_str() );
+    }
+
+    // movesString is either empty or "moves xxxx"
+    std::vector<Move> moves;
+  
+    // Move past "moves"
+    details = firstWord( movesString );
+
+    details = firstWord( movesString );
+    while ( !details.first.empty() )
+    {
+        moves.push_back( Move( details.first.c_str() ) );
+        details = firstWord( details.second );
+    }
+
+//    Board* board = Board::createBoard(  );
 
     Search search = Search( engine.stagedPosition, goArgs );
     search.start( engine );
