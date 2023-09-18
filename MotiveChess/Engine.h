@@ -15,7 +15,6 @@ private:
     static std::map<const std::string, CommandHandler> commandHandlers;
 
     bool debug;
-    bool quitting;
     std::optional<std::string> inputFile;
     std::optional<std::string> logFile;
     FILE* broadcastStream;
@@ -23,6 +22,9 @@ private:
 
     bool uciDebug;
     bool registered;
+
+    volatile bool quitting;
+    volatile bool stopThinking;
 
     std::string stagedPosition;
 
@@ -40,7 +42,7 @@ private:
     /// </summary>
     /// <param name="line">a long string, potentially containing multiple words (space-separated smaller strings)</param>
     /// <returns>the first word from the line, or empty string if none</returns>
-    static inline std::pair<std::string, std::string> firstWord( const std::string& line )
+    static inline std::pair<std::string, std::string> firstWord( const std::string& line ) const
     {
         std::string trimmed = trim( line );
         std::pair<std::string, std::string> result;
@@ -66,7 +68,7 @@ private:
     /// </summary>
     /// <param name="string">the input string</param>
     /// <returns></returns>
-    static inline std::string trim( const std::string& string )
+    static std::string trim( const std::string& string ) const
     {
         std::string trimmed = string;
         while ( trimmed.starts_with( " " ) )

@@ -53,7 +53,8 @@ Engine::Engine() :
     logFile( std::nullopt ),
     broadcastStream( stdout ),
     logStream( stderr ),
-    stagedPosition( Fen::startingPositionReference )
+    stagedPosition( Fen::startingPositionReference ),
+    stopThinking( false )
 {
 }
 void Engine::initialize()
@@ -270,16 +271,28 @@ void Engine::positionCommand( Engine& engine, const std::string& arguments )
 void Engine::goCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing go command" );
+
+    // TODO parse lots of commands and start a thinking thread
+    // TODO remember to set 'stopThinking' to false
+    // The thinking thread can take the stagedPosition and these 'go' arguments
+    // ...it'll need a reference to this engine, too, to monitor the stop flag
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing stop command" );
+
+    // TODO more here - we should broadcast bestmove - but not if we are quitting; 
+    // TODO make this a blocking action
+    // TODO only do all this if we are currently thinking
+    engine.stopThinking = true;
 }
 
 void Engine::ponderhitCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing ponderhit command" );
+
+    // TODO it'll be a while until we get to this, probably
 }
 
 void Engine::quitCommand( Engine& engine, const std::string& arguments )
@@ -287,6 +300,9 @@ void Engine::quitCommand( Engine& engine, const std::string& arguments )
     INFO_S( engine, "Processing quit command" );
 
     engine.quitting = true;
+
+    // TODO change this to whatever does the blocking wait
+    stopCommand( engine, std::string() );
 }
 
 void Engine::perftCommand( Engine& engine, const std::string& arguments )
