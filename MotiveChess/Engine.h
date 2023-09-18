@@ -77,6 +77,7 @@ private:
 
     void debuglog( const char* format, ... );
     void log( const char* level, const char* format, ... );
+    void broadcast( const char* format, ... );
 
 public:
     Engine() :

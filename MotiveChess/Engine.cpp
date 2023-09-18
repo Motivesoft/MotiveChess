@@ -44,14 +44,14 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 
 void Engine::initialize()
 {
-    DEBUG( "initialize\n" );
+    DEBUG( "initialize" );
 
     BitBoard::initialize();
 }
 
 void Engine::run()
 {
-    DEBUG( "run\n" );
+    DEBUG( "run" );
 
     // Determine where the input is coming from - file or console
     std::ifstream infile;
@@ -60,7 +60,7 @@ void Engine::run()
         infile = std::ifstream( inputFile.value() );
         if ( !infile.is_open() )
         {
-            ERROR( "Cannot read input file: %s\n", inputFile.value().c_str() );
+            ERROR( "Cannot read input file: %s", inputFile.value().c_str() );
         }
     }
     std::istream& instream = inputFile.has_value() ? infile : std::cin;
@@ -93,7 +93,7 @@ void Engine::run()
         }
         else
         {
-            WARN( "Ignoring unrecognised command: %s\n", commandArguments.first.c_str() );
+            WARN( "Ignoring unrecognised command: %s", commandArguments.first.c_str() );
         }
     }
 }
@@ -102,7 +102,7 @@ void Engine::run()
 
 void Engine::uciCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing uci command\n" );
+    INFO_S( engine, "Processing uci command" );
 
     // TODO any further setup?
 
@@ -124,7 +124,7 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing debug command\n" );
+    INFO_S( engine, "Processing debug command" );
 
     if ( arguments.empty() )
     {
@@ -141,13 +141,13 @@ void Engine::debugCommand( Engine& engine, const std::string& arguments )
     }
     else
     {
-        ERROR_S( engine, "Unrecognised debug option: %s\n", arguments.c_str() );
+        ERROR_S( engine, "Unrecognised debug option: %s", arguments.c_str() );
     }
 }
 
 void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing isready command\n" );
+    INFO_S( engine, "Processing isready command" );
 
     // TODO whatever we need to do here - perhaps nothing
 
@@ -156,7 +156,7 @@ void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
 
 void Engine::setoptionCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing setoption command\n" );
+    INFO_S( engine, "Processing setoption command" );
 
     std::pair<std::string, std::string> details = firstWord( arguments );
     if ( details.first == "name" )
@@ -177,32 +177,32 @@ void Engine::setoptionCommand( Engine& engine, const std::string& arguments )
                 }
                 else if ( details.second.empty() )
                 {
-                    ERROR_S( engine, "Missing value for setoption\n" );
+                    ERROR_S( engine, "Missing value for setoption" );
                 }
                 else
                 {
-                    ERROR_S( engine, "Illegal value for setoption: %s\n", details.second.c_str() );
+                    ERROR_S( engine, "Illegal value for setoption: %s", details.second.c_str() );
                 }
             }
             else
             {
-                ERROR_S( engine, "Malformed setoption command. Expected 'value'\n" );
+                ERROR_S( engine, "Malformed setoption command. Expected 'value'" );
             }
         }
         else
         {
-            ERROR_S( engine, "Unrecognised option name: %s\n", details.first.c_str() );
+            ERROR_S( engine, "Unrecognised option name: %s", details.first.c_str() );
         }
     }
     else
     {
-        ERROR_S( engine, "Malformed setoption command. Expected 'name'\n" );
+        ERROR_S( engine, "Malformed setoption command. Expected 'name'" );
     }
 }
 
 void Engine::registerCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing register command\n" );
+    INFO_S( engine, "Processing register command" );
 
     std::pair<std::string, std::string> details = firstWord( arguments );
     if ( details.first == "later" )
@@ -216,49 +216,49 @@ void Engine::registerCommand( Engine& engine, const std::string& arguments )
     }
     else if( details.first.empty() )
     {
-        ERROR_S( engine, "Malformed registration command\n" );
+        ERROR_S( engine, "Malformed registration command" );
     }
     else
     {
-        ERROR_S( engine, "Unrecognised registration command: %s\n", details.first.c_str() );
+        ERROR_S( engine, "Unrecognised registration command: %s", details.first.c_str() );
     }
 }
 
 void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing ucinewgame command\n" );
+    INFO_S( engine, "Processing ucinewgame command" );
 }
 
 void Engine::positionCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing position command\n" );
+    INFO_S( engine, "Processing position command" );
 }
 
 void Engine::goCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing go command\n" );
+    INFO_S( engine, "Processing go command" );
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing stop command\n" );
+    INFO_S( engine, "Processing stop command" );
 }
 
 void Engine::ponderhitCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing ponderhit command\n" );
+    INFO_S( engine, "Processing ponderhit command" );
 }
 
 void Engine::quitCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing quit command\n" );
+    INFO_S( engine, "Processing quit command" );
 
     engine.quitting = true;
 }
 
 void Engine::perftCommand( Engine& engine, const std::string& arguments )
 {
-    INFO_S( engine, "Processing perft command\n" );
+    INFO_S( engine, "Processing perft command" );
 
     bool divide = false;
 
@@ -274,7 +274,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 
     if ( commandArguments.first.empty() )
     {
-        ERROR_S( engine, "Missing perft arguments\n" );
+        ERROR_S( engine, "Missing perft arguments" );
         return;
     }
 
@@ -328,89 +328,95 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 
 void Engine::idBroadcast( const std::string& name, const std::string& author )
 {
-    INFO( "Broadcasting id message\n" );
+    INFO( "Broadcasting id message" );
 
-    fprintf( broadcastStream, "id name %s\n", name.c_str() );
-    fprintf( broadcastStream, "id author %s\n", author.c_str() );
+    broadcast( "id name %s", name.c_str() );
+    broadcast( "id author %s", author.c_str() );
 }
 
 void Engine::uciokBroadcast()
 {
-    INFO( "Broadcasting uciok message\n" );
+    INFO( "Broadcasting uciok message" );
 
-    fprintf( broadcastStream, "uciok\n" );
+    broadcast( "uciok" );
 }
 
 void Engine::readyokBroadcast()
 {
-    INFO( "Broadcasting uciok message\n" );
+    INFO( "Broadcasting uciok message" );
 
-    fprintf( broadcastStream, "readyok\n" );
+    broadcast( "readyok" );
 }
 
 void Engine::bestmoveBroadcast( const Move& bestmove )
 {
-    INFO( "Broadcasting bestmove message\n" );
+    INFO( "Broadcasting bestmove message" );
 
-    fprintf( broadcastStream, "bestmove %s\n", bestmove.toString().c_str() );
+    broadcast( "bestmove %s", bestmove.toString().c_str() );
 }
 
 void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder )
 {
-    INFO( "Broadcasting bestmove message\n" );
+    INFO( "Broadcasting bestmove message" );
 
-    fprintf( broadcastStream, "bestmove %s ponder %s\n", bestmove.toString().c_str(), ponder.toString().c_str() );
+    broadcast( "bestmove %s ponder %s", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
 
 void Engine::copyprotectionBroadcast( const std::string& status )
 {
-    INFO( "Sending copyprotection status\n" );
+    INFO( "Sending copyprotection status" );
 
-    fprintf( broadcastStream, "copyprotection %s\n", status.c_str() );
+    broadcast( "copyprotection %s", status.c_str() );
 }
 
 void Engine::registrationBroadcast( const std::string& status )
 {
-    INFO( "Sending registration status\n" );
+    INFO( "Sending registration status" );
 
-    fprintf( broadcastStream, "registration %s\n", status.c_str() );
+    broadcast( "registration %s", status.c_str() );
 }
 
 void Engine::infoBroadcast( const std::string& type, const char* format, va_list arg )
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
-    DEBUG( "Broadcasting info message\n" );
+    DEBUG( "Broadcasting info message" );
+
+    // This is too complicated to pass to the broadcast() method, but that's OK
 
     fprintf( broadcastStream, "info %s ", type.c_str() );
     vfprintf( broadcastStream, format, arg );
+    fprintf( broadcastStream, "\n" );
 }
 
 void Engine::infoBroadcast( const std::string& type, const char* format, ... )
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
-    DEBUG( "Broadcasting info message\n" );
+    DEBUG( "Broadcasting info message" );
+
+    // This is too complicated to pass to the broadcast() method, but that's OK
 
     va_list arg;
     va_start( arg, format );
 
     fprintf( broadcastStream, "info %s ", type.c_str() );
     vfprintf( broadcastStream, format, arg );
+    fprintf( broadcastStream, "\n" );
 
     va_end( arg );
 }
 
 void Engine::optionBroadcast( const std::string& id, bool value )
 {
-    INFO( "Broadcasting bestmove message\n" );
+    INFO( "Broadcasting bestmove message" );
 
-    fprintf( broadcastStream, "option name %s type check default %s\n", id.c_str(), value ? "true" : "false");
+    broadcast( "option name %s type check default %s", id.c_str(), value ? "true" : "false" );
 }
 
 // Perft functions
 
 void Engine::perftDepth( const std::string& depthString, const std::string& fenString, bool divide )
 {
-    DEBUG( "Run perft with depth: %s and FEN string: %s\n", depthString.c_str(), fenString.c_str() );
+    DEBUG( "Run perft with depth: %s and FEN string: %s", depthString.c_str(), fenString.c_str() );
 
     int depth = atoi( depthString.c_str() );
     if ( depth < 0 )
@@ -425,19 +431,19 @@ void Engine::perftDepth( const std::string& depthString, const std::string& fenS
 
 void Engine::perftFen( const std::string& fenString, bool divide )
 {
-    DEBUG( "Run perft with FEN: %s\n", fenString.c_str() );
+    DEBUG( "Run perft with FEN: %s", fenString.c_str() );
     
     Perft::perftFen( fenString, divide );
 }
 
 void Engine::perftFile( const std::string& filename, bool divide )
 {
-    DEBUG( "Run perft with file: %s\n", filename.c_str() );
+    DEBUG( "Run perft with file: %s", filename.c_str() );
 
     std::ifstream instream = std::ifstream( filename );
     if ( !instream.is_open() )
     {
-        ERROR( "Cannot read input file: %s\n", filename.c_str() );
+        ERROR( "Cannot read input file: %s", filename.c_str() );
     }
 
     // Read, line by line until the end and feed each line to perftFen
@@ -462,6 +468,7 @@ void Engine::debuglog( const char* format, ... )
 
     fprintf( stderr, "DEBUG : " );
     vfprintf( stderr, format, arg );
+    fprintf( stderr, "\n" );
 
     va_end( arg );
 }
@@ -473,11 +480,23 @@ void Engine::log( const char* level, const char* format, ... )
 
     fprintf( stderr, "%s : ", level );
     vfprintf( stderr, format, arg );
+    fprintf( stderr, "\n" );
 
     if ( uciDebug )
     {
         infoBroadcast( "string", format, arg );
     }
+
+    va_end( arg );
+}
+
+void Engine::broadcast( const char* format, ... )
+{
+    va_list arg;
+    va_start( arg, format );
+
+    vfprintf( broadcastStream, format, arg );
+    fprintf( broadcastStream, "\n" );
 
     va_end( arg );
 }
