@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 
+#include "Move.h"
+
 class Engine
 {
 private:
@@ -118,7 +120,8 @@ public:
     void idBroadcast( const std::string& name, const std::string& author );
     void uciokBroadcast();
     void readyokBroadcast();
-    void bestmoveBroadcast();
+    void bestmoveBroadcast( const Move& bestmove );
+    void bestmoveBroadcast( const Move& bestmove, const Move& ponder );
     void copyprotectionBroadcast();
     void registrationBroadcast();
     void infoBroadcast( const char* type, const char* format, va_list args );

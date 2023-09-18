@@ -11,12 +11,14 @@
 #include "Fen.h"
 #include "Perft.h"
 
-#define DEBUG_S(engine,...) if( engine.debug ){ engine.log( "DEBUG", __VA_ARGS__ ); }
+// Loggers from static methods
+#define DEBUG_S(engine,...) if( engine.debug ){ engine.debuglog( __VA_ARGS__ ); }
 #define INFO_S(engine,...) { engine.log( "INFO", __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( "WARN ", __VA_ARGS__ ); }
 #define ERROR_S(engine,...) { engine.log( "ERROR", __VA_ARGS__ ); }
 
-#define DEBUG(...) if( debug ){ log( "DEBUG", __VA_ARGS__ ); }
+// Loggers from non-static methods
+#define DEBUG(...) if( debug ){ debuglog( __VA_ARGS__ ); }
 #define INFO(...) { log( "INFO ", __VA_ARGS__ ); }
 #define WARN(...) { log( "WARN ", __VA_ARGS__ ); }
 #define ERROR(...) { log( "ERROR", __VA_ARGS__ ); }
@@ -100,7 +102,7 @@ void Engine::run()
 
 void Engine::uciCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing uci command\n" );
+    INFO_S( engine, "Processing uci command\n" );
 
     // TODO any further setup?
 
@@ -115,7 +117,7 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing debug command\n" );
+    INFO_S( engine, "Processing debug command\n" );
 
     if ( arguments.empty() )
     {
@@ -128,7 +130,7 @@ void Engine::debugCommand( Engine& engine, const std::string& arguments )
     }
     else if ( arguments == "off" )
     {
-        engine.uciDebug = true;
+        engine.uciDebug = false;
     }
     else
     {
@@ -138,54 +140,58 @@ void Engine::debugCommand( Engine& engine, const std::string& arguments )
 
 void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing isready command\n" );
+    INFO_S( engine, "Processing isready command\n" );
+
+    // TODO whatever we need to do here - perhaps nothing
+
+    engine.readyokBroadcast();
 }
 
 void Engine::setoptionCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing setoption command\n" );
+    INFO_S( engine, "Processing setoption command\n" );
 }
 
 void Engine::registerCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing register command\n" );
+    INFO_S( engine, "Processing register command\n" );
 }
 
 void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing ucinewgame command\n" );
+    INFO_S( engine, "Processing ucinewgame command\n" );
 }
 
 void Engine::positionCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing position command\n" );
+    INFO_S( engine, "Processing position command\n" );
 }
 
 void Engine::goCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing go command\n" );
+    INFO_S( engine, "Processing go command\n" );
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing stop command\n" );
+    INFO_S( engine, "Processing stop command\n" );
 }
 
 void Engine::ponderhitCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing ponderhit command\n" );
+    INFO_S( engine, "Processing ponderhit command\n" );
 }
 
 void Engine::quitCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing quit command\n" );
+    INFO_S( engine, "Processing quit command\n" );
 
     engine.quitting = true;
 }
 
 void Engine::perftCommand( Engine& engine, const std::string& arguments )
 {
-    DEBUG_S( engine, "Processing perft command\n" );
+    INFO_S( engine, "Processing perft command\n" );
 
     bool divide = false;
 
@@ -255,7 +261,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 
 void Engine::idBroadcast( const std::string& name, const std::string& author )
 {
-    DEBUG( "Broadcasting id message\n" );
+    INFO( "Broadcasting id message\n" );
 
     fprintf( broadcastStream, "id name %s\n", name.c_str() );
     fprintf( broadcastStream, "id author %s\n", author.c_str() );
@@ -263,17 +269,30 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
 
 void Engine::uciokBroadcast()
 {
-    DEBUG( "Broadcasting uciok message\n" );
+    INFO( "Broadcasting uciok message\n" );
 
     fprintf( broadcastStream, "uciok\n" );
 }
 
 void Engine::readyokBroadcast()
 {
+    INFO( "Broadcasting uciok message\n" );
+
+    fprintf( broadcastStream, "readyok\n" );
 }
 
-void Engine::bestmoveBroadcast()
+void Engine::bestmoveBroadcast( const Move& bestmove )
 {
+    INFO( "Broadcasting bestmove message\n" );
+
+    fprintf( broadcastStream, "bestmove %s\n", bestmove.toString().c_str() );
+}
+
+void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder )
+{
+    INFO( "Broadcasting bestmove message\n" );
+
+    fprintf( broadcastStream, "bestmove %s ponder %s\n", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
 
 void Engine::copyprotectionBroadcast()
@@ -286,6 +305,8 @@ void Engine::registrationBroadcast()
 
 void Engine::infoBroadcast( const char* type, const char* format, va_list arg )
 {
+    // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
+    DEBUG( "Broadcasting info message\n" );
 
     fprintf( broadcastStream, "info %s ", type );
     vfprintf( broadcastStream, format, arg );
@@ -293,6 +314,9 @@ void Engine::infoBroadcast( const char* type, const char* format, va_list arg )
 
 void Engine::infoBroadcast( const char* type, const char* format, ... )
 {
+    // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
+    DEBUG( "Broadcasting info message\n" );
+
     va_list arg;
     va_start( arg, format );
 
