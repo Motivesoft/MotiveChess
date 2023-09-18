@@ -317,6 +317,44 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
 
             builder.setSearchMoves( searchMoves );
         }
+        else if ( details.first == "wtime" )
+        {
+            details = firstWord( details.second );
+            // TODO pass details.first as a wtime
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "btime" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "winc" )
+        {
+            details = firstWord( details.second );
+        }
+        else if( details.first == "binc" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "movestogo" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "depth" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "nodes" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "mate" )
+        {
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "movetime" )
+        {
+            details = firstWord( details.second );
+        }
         else
         {
             ERROR_S( engine, "Ignoring unsupported go option: %s", details.first.c_str() );
