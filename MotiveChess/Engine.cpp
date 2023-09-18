@@ -53,7 +53,7 @@ Engine::Engine() :
     logFile( std::nullopt ),
     broadcastStream( stdout ),
     logStream( stderr ),
-    stagedPosition( Fen::startingPosition )
+    stagedPosition( Fen::startingPositionReference )
 {
 }
 void Engine::initialize()
@@ -254,20 +254,17 @@ void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing ucinewgame command" );
 
-    // TODO call some silent version of stop, not the specific UCI command?
-    // TODO deal with not expecting ucinewgame
-
-    stopCommand( engine, "" );
-
-    engine.stagedPosition = Fen::startingPosition;
+    engine.resetGame( engine );
 }
 
 void Engine::positionCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing position command" );
 
-    // Store this and pick it up when 'go' is issued
+    engine.resetGame( engine );
 
+    // Store the input and pick it up when 'go' is issued
+    engine.stagedPosition = arguments;
 }
 
 void Engine::goCommand( Engine& engine, const std::string& arguments )
@@ -362,7 +359,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 
 // Broadcast commands
 
-void Engine::idBroadcast( const std::string& name, const std::string& author )
+void Engine::idBroadcast( const std::string& name, const std::string& author ) const
 {
     INFO( "Broadcasting id message" );
 
@@ -370,49 +367,49 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
     broadcast( "id author %s", author.c_str() );
 }
 
-void Engine::uciokBroadcast()
+void Engine::uciokBroadcast() const
 {
     INFO( "Broadcasting uciok message" );
 
     broadcast( "uciok" );
 }
 
-void Engine::readyokBroadcast()
+void Engine::readyokBroadcast() const
 {
     INFO( "Broadcasting uciok message" );
 
     broadcast( "readyok" );
 }
 
-void Engine::bestmoveBroadcast( const Move& bestmove )
+void Engine::bestmoveBroadcast( const Move& bestmove ) const
 {
     INFO( "Broadcasting bestmove message" );
 
     broadcast( "bestmove %s", bestmove.toString().c_str() );
 }
 
-void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder )
+void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder ) const
 {
     INFO( "Broadcasting bestmove message" );
 
     broadcast( "bestmove %s ponder %s", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
 
-void Engine::copyprotectionBroadcast( const std::string& status )
+void Engine::copyprotectionBroadcast( const std::string& status ) const
 {
     INFO( "Sending copyprotection status" );
 
     broadcast( "copyprotection %s", status.c_str() );
 }
 
-void Engine::registrationBroadcast( const std::string& status )
+void Engine::registrationBroadcast( const std::string& status ) const
 {
     INFO( "Sending registration status" );
 
     broadcast( "registration %s", status.c_str() );
 }
 
-void Engine::infoBroadcast( const std::string& type, const char* format, va_list arg )
+void Engine::infoBroadcast( const std::string& type, const char* format, va_list arg ) const
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
     DEBUG( "Broadcasting info message" );
@@ -424,7 +421,7 @@ void Engine::infoBroadcast( const std::string& type, const char* format, va_list
     fprintf( broadcastStream, "\n" );
 }
 
-void Engine::infoBroadcast( const std::string& type, const char* format, ... )
+void Engine::infoBroadcast( const std::string& type, const char* format, ... ) const
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
     DEBUG( "Broadcasting info message" );
@@ -441,7 +438,7 @@ void Engine::infoBroadcast( const std::string& type, const char* format, ... )
     va_end( arg );
 }
 
-void Engine::optionBroadcast( const std::string& id, bool value )
+void Engine::optionBroadcast( const std::string& id, bool value ) const
 {
     INFO( "Broadcasting bestmove message" );
 
@@ -450,7 +447,7 @@ void Engine::optionBroadcast( const std::string& id, bool value )
 
 // Perft functions
 
-void Engine::perftDepth( const std::string& depthString, const std::string& fenString, bool divide )
+void Engine::perftDepth( const std::string& depthString, const std::string& fenString, bool divide ) const
 {
     DEBUG( "Run perft with depth: %s and FEN string: %s", depthString.c_str(), fenString.c_str() );
 
@@ -465,14 +462,14 @@ void Engine::perftDepth( const std::string& depthString, const std::string& fenS
     }
 }
 
-void Engine::perftFen( const std::string& fenString, bool divide )
+void Engine::perftFen( const std::string& fenString, bool divide ) const
 {
     DEBUG( "Run perft with FEN: %s", fenString.c_str() );
     
     Perft::perftFen( fenString, divide );
 }
 
-void Engine::perftFile( const std::string& filename, bool divide )
+void Engine::perftFile( const std::string& filename, bool divide ) const
 {
     DEBUG( "Run perft with file: %s", filename.c_str() );
 
@@ -497,7 +494,21 @@ void Engine::perftFile( const std::string& filename, bool divide )
     }
 }
 
-void Engine::debuglog( const char* format, ... )
+// Other internal functions
+
+void Engine::resetGame( Engine& engine )
+{
+    // It is possible we will not get a ucinewgame, so encode the same game reset logic in 'position'
+
+    // TODO call some silent version of stop, not the specific UCI command?
+    stopCommand( engine, std::string() );
+
+    engine.stagedPosition = Fen::startingPositionReference;
+}
+
+// Logging
+
+void Engine::debuglog( const char* format, ... ) const
 {
     va_list arg;
     va_start( arg, format );
@@ -509,7 +520,7 @@ void Engine::debuglog( const char* format, ... )
     va_end( arg );
 }
 
-void Engine::log( const char* level, const char* format, ... )
+void Engine::log( const char* level, const char* format, ... ) const
 {
     va_list arg;
     va_start( arg, format );
@@ -526,7 +537,7 @@ void Engine::log( const char* level, const char* format, ... )
     va_end( arg );
 }
 
-void Engine::broadcast( const char* format, ... )
+void Engine::broadcast( const char* format, ... ) const
 {
     va_list arg;
     va_start( arg, format );

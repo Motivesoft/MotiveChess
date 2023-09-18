@@ -26,9 +26,11 @@ private:
 
     std::string stagedPosition;
 
-    void perftDepth( const std::string& depthString, const std::string& fenString, bool divide );
-    void perftFen( const std::string& fenString, bool divide );
-    void perftFile( const std::string& filename, bool divide );
+    void perftDepth( const std::string& depthString, const std::string& fenString, bool divide ) const;
+    void perftFen( const std::string& fenString, bool divide ) const;
+    void perftFile( const std::string& filename, bool divide ) const;
+
+    void resetGame( Engine& engine );
 
     /// <summary>
     /// Takes the first 'word' from line and returns it. The contents of line is
@@ -79,9 +81,9 @@ private:
         return trimmed;
     }
 
-    void debuglog( const char* format, ... );
-    void log( const char* level, const char* format, ... );
-    void broadcast( const char* format, ... );
+    void debuglog( const char* format, ... ) const;
+    void log( const char* level, const char* format, ... ) const;
+    void broadcast( const char* format, ... ) const;
 
 public:
     Engine();
@@ -121,14 +123,14 @@ public:
     static void perftCommand( Engine& engine, const std::string& arguments );
 
     // Broadcast - standard UCI commands
-    void idBroadcast( const std::string& name, const std::string& author );
-    void uciokBroadcast();
-    void readyokBroadcast();
-    void bestmoveBroadcast( const Move& bestmove );
-    void bestmoveBroadcast( const Move& bestmove, const Move& ponder );
-    void copyprotectionBroadcast( const std::string& status );
-    void registrationBroadcast( const std::string& status );
-    void infoBroadcast( const std::string& type, const char* format, va_list args );
-    void infoBroadcast( const std::string&, const char* format, ... );
-    void optionBroadcast( const std::string& id, bool value );
+    void idBroadcast( const std::string& name, const std::string& author ) const;
+    void uciokBroadcast() const;
+    void readyokBroadcast() const;
+    void bestmoveBroadcast( const Move& bestmove ) const;
+    void bestmoveBroadcast( const Move& bestmove, const Move& ponder ) const;
+    void copyprotectionBroadcast( const std::string& status ) const;
+    void registrationBroadcast( const std::string& status ) const;
+    void infoBroadcast( const std::string& type, const char* format, va_list args ) const;
+    void infoBroadcast( const std::string&, const char* format, ... ) const;
+    void optionBroadcast( const std::string& id, bool value ) const;
 };
