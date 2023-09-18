@@ -6,12 +6,11 @@
 #include <sstream>
 #include <string>
 
+#include "BitBoard.h"
 #include "Fen.h"
+#include "Perft.h"
 
 #define DEBUG_S(engine,...) if( engine.debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
-#define INFO_S(engine,...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
-#define WARN_S(engine,...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
-#define ERROR_S(engine,...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
 
 #define DEBUG(...) if( debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
 #define INFO(...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
@@ -41,7 +40,7 @@ void Engine::initialize()
 {
     DEBUG( "initialize\n" );
 
-    // TODO e.g. bitboard initialisation
+    BitBoard::initialize();
 }
 
 void Engine::run()
@@ -182,6 +181,8 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
     // If divide requested, set the flag and move forward
     if ( commandArguments.first == "divide" )
     {
+        DEBUG_S( engine, "Performing perft with divide" );
+
         divide = true;
         commandArguments = firstWord( commandArguments.second );
     }
@@ -190,7 +191,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
     {
         if ( !commandArguments.second.empty() )
         {
-            engine.perftFile( commandArguments.second );
+            engine.perftFile( commandArguments.second, divide );
         }
         else
         {
@@ -201,7 +202,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
     {
         if ( !commandArguments.second.empty() )
         {
-            engine.perftFen( commandArguments.second );
+            engine.perftFen( commandArguments.second, divide );
         }
         else
         {
@@ -213,12 +214,12 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
         if ( commandArguments.second.empty() )
         {
             // Assume "perft [depth]"
-            engine.perftDepth( commandArguments.first, Fen::startingPosition );
+            engine.perftDepth( commandArguments.first, Fen::startingPosition, divide );
         }
         else
         {
             // Assume "perft [depth] [fen]"
-            engine.perftDepth( commandArguments.first, commandArguments.second );
+            engine.perftDepth( commandArguments.first, commandArguments.second, divide );
         }
     }
 }
@@ -263,7 +264,7 @@ void Engine::optionBroadcast()
 
 // Perft functions
 
-void Engine::perftDepth( const std::string& depthString, const std::string& fenString )
+void Engine::perftDepth( const std::string& depthString, const std::string& fenString, bool divide )
 {
     DEBUG( "Run perft with depth: %s and FEN string: %s\n", depthString.c_str(), fenString.c_str() );
 
@@ -274,17 +275,18 @@ void Engine::perftDepth( const std::string& depthString, const std::string& fenS
     }
     else
     {
-        // TODO decode FEN into Board and run depth perft - possibly with divide
+        Perft::perftDepth( depth, fenString, divide );
     }
 }
 
-void Engine::perftFen( const std::string& fenString )
+void Engine::perftFen( const std::string& fenString, bool divide )
 {
     DEBUG( "Run perft with FEN: %s\n", fenString.c_str() );
-
+    
+    Perft::perftFen( fenString, divide );
 }
 
-void Engine::perftFile( const std::string& filename )
+void Engine::perftFile( const std::string& filename, bool divide )
 {
     DEBUG( "Run perft with file: %s\n", filename.c_str() );
 
@@ -305,7 +307,7 @@ void Engine::perftFile( const std::string& filename )
             continue;
         }
 
-        perftFen( line );
+        perftFen( line, divide );
     }
 }
 

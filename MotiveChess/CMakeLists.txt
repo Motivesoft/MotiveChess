@@ -12,7 +12,7 @@ endif()
 project ("MotiveChess")
 
 # Add source to this project's executable.
-add_executable (MotiveChess "MotiveChess.cpp" "MotiveChess.h" "Engine.cpp" "Engine.h" "Fen.cpp" "Fen.h")
+add_executable (MotiveChess "MotiveChess.cpp" "MotiveChess.h" "Engine.cpp" "Engine.h" "Fen.cpp" "Fen.h" "Perft.cpp" "Perft.h" "Board.cpp" "Board.h" "Move.cpp" "Move.h" "BitBoard.cpp" "BitBoard.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET MotiveChess PROPERTY CXX_STANDARD 20)

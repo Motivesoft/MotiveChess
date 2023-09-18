@@ -17,9 +17,9 @@ private:
     std::optional<std::string> inputFile;
     std::ostream& broadcastStream;
 
-    void perftDepth( const std::string& depthString, const std::string& fenString );
-    void perftFen( const std::string& fenString );
-    void perftFile( const std::string& filename );
+    void perftDepth( const std::string& depthString, const std::string& fenString, bool divide );
+    void perftFen( const std::string& fenString, bool divide );
+    void perftFile( const std::string& filename, bool divide );
 
     /// <summary>
     /// Takes the first 'word' from line and returns it. The contents of line is
