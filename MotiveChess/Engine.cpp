@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#include "Fen.h"
+
 #define DEBUG_S(engine,...) if( engine.debug ){ fprintf(stderr, "DEBUG: "); fprintf( stderr, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { fprintf(stderr, "INFO : "); fprintf( stderr, __VA_ARGS__ ); }
 #define WARN_S(engine,...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
@@ -32,7 +34,7 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
     { "quit", &Engine::quitCommand },
 
     // Custom commands
-    { "perft", &Engine::quitCommand },
+    { "perft", &Engine::perftCommand },
 };
 
 void Engine::initialize()
@@ -62,8 +64,6 @@ void Engine::run()
     std::string line;
     while ( !quitting && std::getline( instream, line ) )
     {
-        std::istringstream iss( line );
-
         // Trim left, right and center for extraneous spaces, thus turning:
         // "   c   c c     c   c   " into "c c c c c"
         while ( line.starts_with( " " ) )
@@ -103,7 +103,6 @@ void Engine::run()
             arguments = line.substr( space + 1 );
         }
 
-        //DEBUG( "[%s][%s]\n", command.c_str(), arguments.c_str());
         if ( commandHandlers.find( command ) != commandHandlers.end() )
         {
             commandHandlers[ command ]( *this, arguments );
@@ -115,11 +114,6 @@ void Engine::run()
     }
 }
 
-void Engine::next( std::string line )
-{
-    DEBUG( line.c_str() );
-}
-
 // UCI commands
 
 void Engine::uciCommand( Engine& engine, const std::string& arguments )
@@ -127,6 +121,7 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
     DEBUG_S( engine, "Processing uci command\n" );
 
     // TODO any further setup?
+    // TODO notification of options etc
 
     engine.idBroadcast( "MotiveChess", "Motivesoft" );
 }
@@ -187,7 +182,54 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 {
     DEBUG_S( engine, "Processing perft command\n" );
 
-    engine.quitting = true;
+    // Types of perft:
+    //  [depth]
+    //  [depth] [fen]
+    //  fen [fen][expected results]
+    //  file [epd file]
+    // 
+    // Run with -debug to divide
+
+    std::string keyword;
+
+    size_t space = arguments.find( " " );
+    if ( space == std::string::npos )
+    {
+        // Assume "perft [depth]"
+        engine.perftDepth( arguments, Fen::startingPosition );
+    }
+    else
+    {
+        std::string keyword = arguments.substr( 0, space );
+        std::string parameters = arguments.substr( space + 1 );
+        if ( keyword == "file" )
+        {
+            if ( !parameters.empty() )
+            {
+                engine.perftFile( parameters );
+            }
+            else
+            {
+                ERROR( "Missing filename" );
+            }
+        }
+        else if ( keyword == "fen" )
+        {
+            if ( !parameters.empty() )
+            {
+                engine.perftFen( parameters );
+            }
+            else
+            {
+                ERROR( "Missing FEN string" );
+            }
+        }
+        else
+        {
+            // Assume "perft [depth] [fen]"
+            engine.perftDepth( keyword, parameters );
+        }
+    }
 }
 
 // Broadcast commands
@@ -199,3 +241,65 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
     std::cout << "id name " << name << std::endl;
     std::cout << "id author " << author << std::endl;
 }
+
+void Engine::perftDepth( const std::string& depthString, const std::string& fenString )
+{
+    DEBUG( "Run perft with depth: %s and FEN string: %s\n", depthString.c_str(), fenString.c_str() );
+
+    int depth = atoi( depthString.c_str() );
+    if ( depth < 0 )
+    {
+        ERROR( "Illegal depth: %s", depthString.c_str() );
+    }
+    else
+    {
+        // TODO decode FEN into Board and run depth perft - possibly with divide
+    }
+}
+
+void Engine::perftFen( const std::string& fenString )
+{
+    DEBUG( "Run perft with FEN: %s\n", fenString.c_str() );
+
+}
+
+void Engine::perftFile( const std::string& filename )
+{
+    DEBUG( "Run perft with file: %s\n", filename.c_str() );
+
+    std::ifstream infile = std::ifstream( filename );
+    if ( !infile.is_open() )
+    {
+        ERROR( "Cannot read input file: %s\n", filename.c_str() );
+    }
+
+    // Read, line by line until the end or 'quitting' is set
+    std::string line;
+    while ( std::getline( infile, line ) )
+    {
+        // Trim left, right and center for extraneous spaces
+        while ( line.starts_with( " " ) )
+        {
+            line = line.substr( 1 );
+        }
+
+        while ( line.ends_with( " " ) )
+        {
+            line = line.substr( 0, line.length() - 1 );
+        }
+
+        size_t space;
+        while ( ( space = line.find( "  " ) ) != std::string::npos )
+        {
+            line = line.substr( 0, space ) + line.substr( space + 1 );
+        }
+
+        if ( line.length() == 0 || line.starts_with( "#" ) )
+        {
+            continue;
+        }
+
+        perftFen( line );
+    }
+}
+

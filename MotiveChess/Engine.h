@@ -15,6 +15,10 @@ private:
     bool quitting;
     std::optional<std::string> inputFile;
 
+    void perftDepth( const std::string& depthString, const std::string& fenString );
+    void perftFen( const std::string& fenString );
+    void perftFile( const std::string& filename );
+
 public:
     Engine() :
         debug( false ),
@@ -35,7 +39,6 @@ public:
 
     void initialize();
     void run();
-    void next( std::string line );
 
     // Command handlers - standard UCI commands
     static void uciCommand( Engine& engine, const std::string& arguments );
