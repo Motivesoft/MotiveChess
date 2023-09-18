@@ -108,11 +108,18 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
 
     engine.idBroadcast( "MotiveChess", "Motivesoft" );
     
-    // TODO notification of options, copy protection etc
+    // TODO do this properly
+    engine.copyprotectionBroadcast( "checking" );
+    engine.copyprotectionBroadcast( "ok" );
+
+    // TODO if we ever have more than one option, handle them in a better way than this
+    engine.optionBroadcast( "Trace", engine.debug );
 
     engine.uciokBroadcast();
 
-    // TODO registration?
+    // TODO do this more properly
+    engine.registrationBroadcast( "checking" );
+    engine.registrationBroadcast( "ok" );
 }
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
@@ -150,11 +157,71 @@ void Engine::isreadyCommand( Engine& engine, const std::string& arguments )
 void Engine::setoptionCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing setoption command\n" );
+
+    std::pair<std::string, std::string> details = firstWord( arguments );
+    if ( details.first == "name" )
+    {
+        details = firstWord( details.second );
+        if ( details.first == "Trace" )
+        {
+            details = firstWord( details.second );
+            if ( details.first == "value" )
+            {
+                if ( details.second == "true" )
+                {
+                    engine.debug = true;
+                }
+                else if ( details.second == "false" )
+                {
+                    engine.debug = false;
+                }
+                else if ( details.second.empty() )
+                {
+                    ERROR_S( engine, "Missing value for setoption\n" );
+                }
+                else
+                {
+                    ERROR_S( engine, "Illegal value for setoption: %s\n", details.second.c_str() );
+                }
+            }
+            else
+            {
+                ERROR_S( engine, "Malformed setoption command. Expected 'value'\n" );
+            }
+        }
+        else
+        {
+            ERROR_S( engine, "Unrecognised option name: %s\n", details.first.c_str() );
+        }
+    }
+    else
+    {
+        ERROR_S( engine, "Malformed setoption command. Expected 'name'\n" );
+    }
 }
 
 void Engine::registerCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing register command\n" );
+
+    std::pair<std::string, std::string> details = firstWord( arguments );
+    if ( details.first == "later" )
+    {
+        engine.registered = false;
+    }
+    else if ( details.first == "name" )
+    {
+        // TODO do this properly
+        engine.registered = true;
+    }
+    else if( details.first.empty() )
+    {
+        ERROR_S( engine, "Malformed registration command\n" );
+    }
+    else
+    {
+        ERROR_S( engine, "Unrecognised registration command: %s\n", details.first.c_str() );
+    }
 }
 
 void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
@@ -295,24 +362,30 @@ void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder )
     fprintf( broadcastStream, "bestmove %s ponder %s\n", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
 
-void Engine::copyprotectionBroadcast()
+void Engine::copyprotectionBroadcast( const std::string& status )
 {
+    INFO( "Sending copyprotection status\n" );
+
+    fprintf( broadcastStream, "copyprotection %s\n", status.c_str() );
 }
 
-void Engine::registrationBroadcast()
+void Engine::registrationBroadcast( const std::string& status )
 {
+    INFO( "Sending registration status\n" );
+
+    fprintf( broadcastStream, "registration %s\n", status.c_str() );
 }
 
-void Engine::infoBroadcast( const char* type, const char* format, va_list arg )
+void Engine::infoBroadcast( const std::string& type, const char* format, va_list arg )
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
     DEBUG( "Broadcasting info message\n" );
 
-    fprintf( broadcastStream, "info %s ", type );
+    fprintf( broadcastStream, "info %s ", type.c_str() );
     vfprintf( broadcastStream, format, arg );
 }
 
-void Engine::infoBroadcast( const char* type, const char* format, ... )
+void Engine::infoBroadcast( const std::string& type, const char* format, ... )
 {
     // Don't log this at INFO as it might go into an infinite loop reporting this back to the caller
     DEBUG( "Broadcasting info message\n" );
@@ -320,14 +393,17 @@ void Engine::infoBroadcast( const char* type, const char* format, ... )
     va_list arg;
     va_start( arg, format );
 
-    fprintf( broadcastStream, "info %s ", type );
+    fprintf( broadcastStream, "info %s ", type.c_str() );
     vfprintf( broadcastStream, format, arg );
 
     va_end( arg );
 }
 
-void Engine::optionBroadcast()
+void Engine::optionBroadcast( const std::string& id, bool value )
 {
+    INFO( "Broadcasting bestmove message\n" );
+
+    fprintf( broadcastStream, "option name %s type check default %s\n", id.c_str(), value ? "true" : "false");
 }
 
 // Perft functions

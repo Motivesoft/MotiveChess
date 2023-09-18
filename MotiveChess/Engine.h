@@ -20,6 +20,7 @@ private:
     FILE* broadcastStream;
 
     bool uciDebug;
+    bool registered;
 
     void perftDepth( const std::string& depthString, const std::string& fenString, bool divide );
     void perftFen( const std::string& fenString, bool divide );
@@ -81,6 +82,7 @@ public:
     Engine() :
         debug( false ),
         uciDebug( false ),
+        registered( false ),
         quitting( false ),
         inputFile( std::nullopt ),
         broadcastStream( stdout )
@@ -122,9 +124,9 @@ public:
     void readyokBroadcast();
     void bestmoveBroadcast( const Move& bestmove );
     void bestmoveBroadcast( const Move& bestmove, const Move& ponder );
-    void copyprotectionBroadcast();
-    void registrationBroadcast();
-    void infoBroadcast( const char* type, const char* format, va_list args );
-    void infoBroadcast( const char* type, const char* format, ... );
-    void optionBroadcast();
+    void copyprotectionBroadcast( const std::string& status );
+    void registrationBroadcast( const std::string& status );
+    void infoBroadcast( const std::string& type, const char* format, va_list args );
+    void infoBroadcast( const std::string&, const char* format, ... );
+    void optionBroadcast( const std::string& id, bool value );
 };
