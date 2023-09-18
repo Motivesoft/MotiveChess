@@ -22,6 +22,8 @@ private:
     bool uciDebug;
     bool registered;
 
+    std::string stagedPosition;
+
     void perftDepth( const std::string& depthString, const std::string& fenString, bool divide );
     void perftFen( const std::string& fenString, bool divide );
     void perftFile( const std::string& filename, bool divide );
@@ -80,15 +82,7 @@ private:
     void broadcast( const char* format, ... );
 
 public:
-    Engine() :
-        debug( false ),
-        uciDebug( false ),
-        registered( false ),
-        quitting( false ),
-        inputFile( std::nullopt ),
-        broadcastStream( stdout )
-    {
-    }
+    Engine();
 
     void setDebug()
     {

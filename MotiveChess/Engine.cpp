@@ -42,6 +42,16 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
     { "perft", &Engine::perftCommand },
 };
 
+Engine::Engine() :
+    debug( false ),
+    uciDebug( false ),
+    registered( false ),
+    quitting( false ),
+    inputFile( std::nullopt ),
+    broadcastStream( stdout ),
+    stagedPosition( Fen::startingPosition )
+{
+}
 void Engine::initialize()
 {
     DEBUG( "initialize" );
@@ -227,11 +237,21 @@ void Engine::registerCommand( Engine& engine, const std::string& arguments )
 void Engine::ucinewgameCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing ucinewgame command" );
+
+    // TODO call some silent version of stop, not the specific UCI command?
+    // TODO deal with not expecting ucinewgame
+
+    stopCommand( engine, "" );
+
+    engine.stagedPosition = Fen::startingPosition;
 }
 
 void Engine::positionCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing position command" );
+
+    // Store this and pick it up when 'go' is issued
+
 }
 
 void Engine::goCommand( Engine& engine, const std::string& arguments )
