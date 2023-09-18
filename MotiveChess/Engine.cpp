@@ -267,15 +267,15 @@ void Engine::perftFile( const std::string& filename )
 {
     DEBUG( "Run perft with file: %s\n", filename.c_str() );
 
-    std::ifstream infile = std::ifstream( filename );
-    if ( !infile.is_open() )
+    std::ifstream instream = std::ifstream( filename );
+    if ( !instream.is_open() )
     {
         ERROR( "Cannot read input file: %s\n", filename.c_str() );
     }
 
-    // Read, line by line until the end or 'quitting' is set
+    // Read, line by line until the end and feed each line to perftFen
     std::string line;
-    while ( std::getline( infile, line ) )
+    while ( std::getline( instream, line ) )
     {
         // Trim left, right and center for extraneous spaces
         while ( line.starts_with( " " ) )
