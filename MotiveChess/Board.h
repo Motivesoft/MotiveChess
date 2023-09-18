@@ -6,6 +6,12 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#include <intrin.h>
+#elif __linux__
+#include <immintrin.h>
+#endif
+
 #include "Move.h"
 
 class Board
@@ -145,28 +151,13 @@ private:
 #if _WIN32
         return _BitScanForward64( index, mask );
 #elif __linux__
-        // TODO find an intrinsic or builtin for this
-        if ( mask == 0 )
+        if ( mask > 0 )
         {
-            return 0;
-        }
-
-        unsigned long long bit = 0b0000000000000000000000000000000000000000000000000000000000000001;
-        unsigned long bitIndex = 0;
-        while ( bit != 0 )
-        {
-            if ( mask & bit )
-            {
-                *index = bitIndex;
-                break;
-            }
-
-            bitIndex++;
-            bit <<= 1;
+            *index = static_cast<unsigned long>( __builtin_ctzll( mask ) );
         }
 
         // Just needs to be something non-zero
-        return !0;
+        return mask > 0;
 #endif
     }
 
@@ -175,28 +166,13 @@ private:
 #if _WIN32
         return _BitScanReverse64( index, mask );
 #elif __linux__
-        // TODO find an intrinsic or builtin for this
-        if ( mask == 0 )
+        if ( mask > 0 )
         {
-            return 0;
-        }
-
-        unsigned long long bit = 0b1000000000000000000000000000000000000000000000000000000000000000;
-        unsigned long bitIndex = 63;
-        while ( bit != 0 )
-        {
-            if ( mask & bit )
-            {
-                *index = bitIndex;
-                break;
-            }
-
-            bit >>= 1;
-            bitIndex--;
+            *index = static_cast<unsigned long>( 63 - __builtin_clzll( mask ) );
         }
 
         // Just needs to be something non-zero
-        return !0;
+        return mask > 0;
 #endif
     }
 
