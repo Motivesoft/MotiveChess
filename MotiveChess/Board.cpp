@@ -465,7 +465,7 @@ std::string Board::toString() const
 
     // En-Passant
     unsigned long index;
-    if ( _BitScanForward64( &index, enPassantIndex ) )
+    if ( scanForward( &index, enPassantIndex ) )
     {
         fen << (char) ( ( index & 7 ) + 'a' ) << (char) ( ( ( index >> 3 ) & 7 ) + '1' );
     }
@@ -585,7 +585,7 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
     unsigned long long possibleMoves;
 
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
@@ -594,7 +594,7 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
         possibleMoves = whiteToMove ? BitBoard::getWhitePawnNormalMoveMask( index ) : BitBoard::getBlackPawnNormalMoveMask( index );
         possibleMoves &= accessibleSquares; // In this case, empty squares
 
-        while ( _BitScanForward64( &destination, possibleMoves ) )
+        while ( scanForward( &destination, possibleMoves ) )
         {
             possibleMoves ^= 1ull << destination;
 
@@ -622,14 +622,14 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
     // Of the pawns that could make a single move, which can also make the double move?
     pieces = baselinePawns;
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
         possibleMoves = whiteToMove ? BitBoard::getWhitePawnExtendedMoveMask( index ) : BitBoard::getBlackPawnExtendedMoveMask( index );
         possibleMoves &= accessibleSquares; // In this case, empty squares
 
-        while ( _BitScanForward64( &destination, possibleMoves ) )
+        while ( scanForward( &destination, possibleMoves ) )
         {
             possibleMoves ^= 1ull << destination;
 
@@ -640,7 +640,7 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
     // Captures, including ep
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
@@ -649,7 +649,7 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
         possibleMoves = whiteToMove ? BitBoard::getWhitePawnAttackMoveMask( index ) : BitBoard::getBlackPawnAttackMoveMask( index );
         possibleMoves &= ( attackPieces | enPassantIndex ); // enemy pieces or the empty EP square (which is 0 if there is none)
 
-        while ( _BitScanForward64( &destination, possibleMoves ) )
+        while ( scanForward( &destination, possibleMoves ) )
         {
             possibleMoves ^= 1ull << destination;
 
@@ -677,14 +677,14 @@ void Board::getKnightMoves( std::vector<Move>& moves, const unsigned short& piec
     unsigned long long possibleMoves;
 
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
         possibleMoves = BitBoard::getKnightMoveMask( index );
         possibleMoves &= accessibleSquares;
 
-        while ( _BitScanForward64( &destination, possibleMoves ) )
+        while ( scanForward( &destination, possibleMoves ) )
         {
             possibleMoves ^= 1ull << destination;
 
@@ -699,7 +699,7 @@ void Board::getBishopMoves( std::vector<Move>& moves, const unsigned short& piec
     unsigned long index;
 
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
@@ -717,7 +717,7 @@ void Board::getRookMoves( std::vector<Move>& moves, const unsigned short& pieceI
     unsigned long index;
 
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
@@ -735,7 +735,7 @@ void Board::getQueenMoves( std::vector<Move>& moves, const unsigned short& piece
     unsigned long index;
 
     pieces = bitboards[ pieceIndex ];
-    while ( _BitScanForward64( &index, pieces ) )
+    while ( scanForward( &index, pieces ) )
     {
         pieces ^= 1ull << index;
 
@@ -761,12 +761,12 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
     // There is only one king, so we can use an if, not a when here and be sure we're only going round once
     pieces = bitboards[ pieceIndex ];
-    if ( _BitScanForward64( &index, pieces ) )
+    if ( scanForward( &index, pieces ) )
     {
         possibleMoves = BitBoard::getKingMoveMask( index );
         possibleMoves &= accessibleSquares;
 
-        while ( _BitScanForward64( &destination, possibleMoves ) )
+        while ( scanForward( &destination, possibleMoves ) )
         {
             possibleMoves ^= 1ull << destination;
 
@@ -846,7 +846,7 @@ bool Board::isAttacked( unsigned long long mask, bool asWhite )
     // For each mask square...
 
     unsigned long index;
-    while ( _BitScanForward64( &index, mask ) )
+    while ( scanForward( &index, mask ) )
     {
         mask ^= 1ull << index;
 
