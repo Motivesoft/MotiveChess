@@ -18,7 +18,7 @@
 #define WARN(...) { fprintf(stderr, "WARN : "); fprintf( stderr, __VA_ARGS__ ); }
 #define ERROR(...) { fprintf(stderr, "ERROR: "); fprintf( stderr, __VA_ARGS__ ); }
 
-std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers 
+std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 {
     // Standard UCI commands
     { "uci", &Engine::uciCommand },
@@ -109,7 +109,7 @@ void Engine::run()
         }
         else
         {
-            WARN("Ignoring unrecognised command: %s\n", command.c_str());
+            WARN( "Ignoring unrecognised command: %s\n", command.c_str() );
         }
     }
 }
@@ -241,6 +241,36 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
     std::cout << "id name " << name << std::endl;
     std::cout << "id author " << author << std::endl;
 }
+
+void Engine::uciokBroadcast()
+{
+}
+
+void Engine::readyokBroadcast()
+{
+}
+
+void Engine::bestmoveBroadcast()
+{
+}
+
+void Engine::copyprotectionBroadcast()
+{
+}
+
+void Engine::registrationBroadcast()
+{
+}
+
+void Engine::infoBroadcast()
+{
+}
+
+void Engine::optionBroadcast()
+{
+}
+
+// Perft functions
 
 void Engine::perftDepth( const std::string& depthString, const std::string& fenString )
 {
