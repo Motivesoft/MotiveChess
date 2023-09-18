@@ -271,6 +271,8 @@ void Engine::positionCommand( Engine& engine, const std::string& arguments )
 
 void Engine::goCommand( Engine& engine, const std::string& arguments )
 {
+    static const std::vector<std::string> goParameters = { "searchmoves", "ponder", "wtime", "btime", "winc", "binc", "movestogo", "depth", "nodes", "mate", "movetime", "infinite" };
+
     INFO_S( engine, "Processing go command" );
 
     // TODO parse lots of commands and start a thinking thread
@@ -279,9 +281,56 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     // ...it'll need a reference to this engine, too, to monitor the stop flag
     GoArguments::Builder builder = GoArguments::Builder();
 
+    std::pair<std::string, std::string> details;
+    details = firstWord( arguments );
+    while ( !details.first.empty() )
+    {
+        if ( details.first == "infinite" )
+        {
+            builder.setInfinite();
+
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "ponder" )
+        {
+            builder.setPonder();
+
+            details = firstWord( details.second );
+        }
+        else if ( details.first == "searchmoves" )
+        {
+            std::vector<Move> searchMoves;
+
+            details = firstWord( details.second );
+            while ( !details.first.empty() )
+            {
+                searchMoves.push_back( Move( details.first.c_str() ) );
+
+                details = firstWord( details.second );
+
+                // TODO if 'first' is one of the other 'go' keywords, break out of here
+                if ( std::find( goParameters.cbegin(), goParameters.cend(), details.first ) != goParameters.cend() )
+                {
+                    break;
+                }
+            }
+
+            builder.setSearchMoves( searchMoves );
+        }
+        else
+        {
+            ERROR_S( engine, "Ignoring unsupported go option: %s", details.first.c_str() );
+
+            details = firstWord( details.second );
+        }
+    }
+
     GoArguments goArgs = builder.build();
+    // TODO Board = board(fen) and then make moves from position statement
+    // TODO pass board and goargs to search
 
     Search search = Search( engine.stagedPosition, goArgs );
+    search.start( engine );
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )

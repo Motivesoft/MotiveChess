@@ -9,6 +9,36 @@ const unsigned long Move::BISHOP = 0b00000000000000000101000000000000;
 const unsigned long Move::ROOK = 0b00000000000000000110000000000000;
 const unsigned long Move::QUEEN = 0b00000000000000000111000000000000;
 
+Move::Move( const char* moveString )
+{
+    unsigned long from = ( ( moveString[ 1 ] - '1' ) << 3 ) | ( moveString[ 0 ] - 'a' );
+    unsigned long to = ( ( moveString[ 3 ] - '1' ) << 3 ) | ( moveString[ 2 ] - 'a' );
+    unsigned long promotion = 0;
+
+    if ( strlen( moveString ) > 4 )
+    {
+        char promotionPiece = moveString[ 4 ];
+        if ( promotionPiece == 'n' )
+        {
+            promotion = KNIGHT;
+        }
+        else if ( promotionPiece == 'b' )
+        {
+            promotion = BISHOP;
+        }
+        else if ( promotionPiece == 'r' )
+        {
+            promotion = ROOK;
+        }
+        else if ( promotionPiece == 'q' )
+        {
+            promotion = QUEEN;
+        }
+    }
+
+    moveBits = ( from << 6 ) | to | promotion;
+}
+
 Move::Move( unsigned long from, unsigned long to, unsigned long promotion ) :
     moveBits( ( from << 6 ) | to | promotion )
 {

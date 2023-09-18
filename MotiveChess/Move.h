@@ -14,6 +14,8 @@ public:
     static const unsigned long ROOK;
     static const unsigned long QUEEN;
 
+    Move( const char* moveString );
+
     Move( unsigned long from, unsigned long to, unsigned long promotion = 0 );
 
     inline unsigned short getFrom() const
