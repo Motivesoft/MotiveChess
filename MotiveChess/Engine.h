@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+#include "GoArguments.h"
 #include "Move.h"
 
 class Engine
@@ -135,4 +136,12 @@ public:
     void infoBroadcast( const std::string& type, const char* format, va_list args ) const;
     void infoBroadcast( const std::string&, const char* format, ... ) const;
     void optionBroadcast( const std::string& id, bool value ) const;
+
+    class Search
+    {
+    public:
+        Search( const std::string& position, const GoArguments& goArgs );
+
+        void start( const Engine& engine );
+    };
 };

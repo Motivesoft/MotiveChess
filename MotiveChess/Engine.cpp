@@ -11,6 +11,7 @@
 
 #include "BitBoard.h"
 #include "Fen.h"
+#include "GoArguments.h"
 #include "Perft.h"
 
 // Loggers from static methods
@@ -276,6 +277,11 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     // TODO remember to set 'stopThinking' to false
     // The thinking thread can take the stagedPosition and these 'go' arguments
     // ...it'll need a reference to this engine, too, to monitor the stop flag
+    GoArguments::Builder builder = GoArguments::Builder();
+
+    GoArguments goArgs = builder.build();
+
+    Search search = Search( engine.stagedPosition, goArgs );
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
@@ -562,4 +568,16 @@ void Engine::broadcast( const char* format, ... ) const
     fprintf( broadcastStream, "\n" );
 
     va_end( arg );
+}
+
+// Search 
+
+Engine::Search::Search( const std::string& position, const GoArguments& goArgs )
+{
+
+}
+
+void Engine::Search::start( const Engine& engine )
+{
+    // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
 }
