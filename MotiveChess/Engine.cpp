@@ -64,18 +64,9 @@ void Engine::run()
     std::string line;
     while ( !quitting && std::getline( instream, line ) )
     {
-        // Trim left, right and center for extraneous spaces, thus turning:
-        // "   c   c c     c   c   " into "c c c c c"
-        while ( line.starts_with( " " ) )
-        {
-            line = line.substr( 1 );
-        }
+        line = trim( line );
 
-        while ( line.ends_with( " " ) )
-        {
-            line = line.substr( 0, line.length() - 1 );
-        }
-
+        // Trim any multiple spaces from within the string to simplify subsequent processing
         size_t space;
         while ( ( space = line.find( "  " ) ) != std::string::npos )
         {
@@ -89,27 +80,15 @@ void Engine::run()
         }
 
         // Split into command and arguments, which should both be trimmed
-        std::string command;
-        std::string arguments;
+        std::pair<std::string, std::string> commandArguments = firstWord( line );
 
-        space = line.find( " " );
-        if ( space == std::string::npos )
+        if ( commandHandlers.find( commandArguments.first ) != commandHandlers.end() )
         {
-            command = line;
+            commandHandlers[ commandArguments.first ]( *this, commandArguments.second );
         }
         else
         {
-            command = line.substr( 0, space );
-            arguments = line.substr( space + 1 );
-        }
-
-        if ( commandHandlers.find( command ) != commandHandlers.end() )
-        {
-            commandHandlers[ command ]( *this, arguments );
-        }
-        else
-        {
-            WARN( "Ignoring unrecognised command: %s\n", command.c_str() );
+            WARN( "Ignoring unrecognised command: %s\n", commandArguments.first.c_str() );
         }
     }
 }
@@ -182,52 +161,64 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
 {
     DEBUG_S( engine, "Processing perft command\n" );
 
+    bool divide = false;
+
     // Types of perft:
     //  [depth]
     //  [depth] [fen]
     //  fen [fen][expected results]
     //  file [epd file]
     // 
-    // Run with -debug to divide
+    // Optionally, can be run with 'divide' as first arg
 
-    std::string keyword;
+    std::pair<std::string, std::string> commandArguments = firstWord( arguments );
 
-    size_t space = arguments.find( " " );
-    if ( space == std::string::npos )
+    if ( commandArguments.first.empty() )
     {
-        // Assume "perft [depth]"
-        engine.perftDepth( arguments, Fen::startingPosition );
+        ERROR( "Missing perft arguments\n" );
+        return;
+    }
+
+    // If divide requested, set the flag and move forward
+    if ( commandArguments.first == "divide" )
+    {
+        divide = true;
+        commandArguments = firstWord( commandArguments.second );
+    }
+
+    if ( commandArguments.first == "file" )
+    {
+        if ( !commandArguments.second.empty() )
+        {
+            engine.perftFile( commandArguments.second );
+        }
+        else
+        {
+            ERROR( "Missing filename" );
+        }
+    }
+    else if ( commandArguments.first == "fen" )
+    {
+        if ( !commandArguments.second.empty() )
+        {
+            engine.perftFen( commandArguments.second );
+        }
+        else
+        {
+            ERROR( "Missing FEN string" );
+        }
     }
     else
     {
-        std::string keyword = arguments.substr( 0, space );
-        std::string parameters = arguments.substr( space + 1 );
-        if ( keyword == "file" )
+        if ( commandArguments.second.empty() )
         {
-            if ( !parameters.empty() )
-            {
-                engine.perftFile( parameters );
-            }
-            else
-            {
-                ERROR( "Missing filename" );
-            }
-        }
-        else if ( keyword == "fen" )
-        {
-            if ( !parameters.empty() )
-            {
-                engine.perftFen( parameters );
-            }
-            else
-            {
-                ERROR( "Missing FEN string" );
-            }
+            // Assume "perft [depth]"
+            engine.perftDepth( commandArguments.first, Fen::startingPosition );
         }
         else
         {
             // Assume "perft [depth] [fen]"
-            engine.perftDepth( keyword, parameters );
+            engine.perftDepth( commandArguments.first, commandArguments.second );
         }
     }
 }
@@ -238,8 +229,8 @@ void Engine::idBroadcast( const std::string& name, const std::string& author )
 {
     DEBUG( "Broadcasting id message\n" );
 
-    std::cout << "id name " << name << std::endl;
-    std::cout << "id author " << author << std::endl;
+    broadcastStream << "id name " << name << std::endl;
+    broadcastStream << "id author " << author << std::endl;
 }
 
 void Engine::uciokBroadcast()
@@ -307,22 +298,7 @@ void Engine::perftFile( const std::string& filename )
     std::string line;
     while ( std::getline( instream, line ) )
     {
-        // Trim left, right and center for extraneous spaces
-        while ( line.starts_with( " " ) )
-        {
-            line = line.substr( 1 );
-        }
-
-        while ( line.ends_with( " " ) )
-        {
-            line = line.substr( 0, line.length() - 1 );
-        }
-
-        size_t space;
-        while ( ( space = line.find( "  " ) ) != std::string::npos )
-        {
-            line = line.substr( 0, space ) + line.substr( space + 1 );
-        }
+        line = trim( line );
 
         if ( line.length() == 0 || line.starts_with( "#" ) )
         {
