@@ -17,7 +17,9 @@ private:
     bool debug;
     bool quitting;
     std::optional<std::string> inputFile;
+    std::optional<std::string> logFile;
     FILE* broadcastStream;
+    FILE* logStream;
 
     bool uciDebug;
     bool registered;
@@ -92,6 +94,11 @@ public:
     void setInputFile( const std::string filename )
     {
         inputFile = std::optional<std::string>( filename );
+    }
+
+    void setLogFile( const std::string filename )
+    {
+        logFile = std::optional<std::string>( filename );
     }
 
     void initialize();

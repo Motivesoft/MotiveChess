@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+#include <stdio.h> // for fopen_s
+
 #include <cstdarg>
 #include <fstream>
 #include <istream>
@@ -13,7 +15,7 @@
 
 // Loggers from static methods
 #define DEBUG_S(engine,...) if( engine.debug ){ engine.debuglog( __VA_ARGS__ ); }
-#define INFO_S(engine,...) { engine.log( "INFO", __VA_ARGS__ ); }
+#define INFO_S(engine,...) { engine.log( "INFO ", __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( "WARN ", __VA_ARGS__ ); }
 #define ERROR_S(engine,...) { engine.log( "ERROR", __VA_ARGS__ ); }
 
@@ -48,12 +50,26 @@ Engine::Engine() :
     registered( false ),
     quitting( false ),
     inputFile( std::nullopt ),
+    logFile( std::nullopt ),
     broadcastStream( stdout ),
+    logStream( stderr ),
     stagedPosition( Fen::startingPosition )
 {
 }
 void Engine::initialize()
 {
+    // Sort out the logging first
+    if ( logFile.has_value() )
+    {
+        errno_t err = fopen_s( &logStream, logFile.value().c_str(), "w");
+
+        if ( logStream == nullptr )
+        {
+            logStream = stderr;
+            ERROR( "Failed (reason %d) to create logfile: %s", err, logFile.value().c_str() );
+        }
+    }
+
     DEBUG( "initialize" );
 
     BitBoard::initialize();
@@ -486,9 +502,9 @@ void Engine::debuglog( const char* format, ... )
     va_list arg;
     va_start( arg, format );
 
-    fprintf( stderr, "DEBUG : " );
-    vfprintf( stderr, format, arg );
-    fprintf( stderr, "\n" );
+    fprintf( logStream, "DEBUG : " );
+    vfprintf( logStream, format, arg );
+    fprintf( logStream, "\n" );
 
     va_end( arg );
 }
@@ -498,9 +514,9 @@ void Engine::log( const char* level, const char* format, ... )
     va_list arg;
     va_start( arg, format );
 
-    fprintf( stderr, "%s : ", level );
-    vfprintf( stderr, format, arg );
-    fprintf( stderr, "\n" );
+    fprintf( logStream, "%s : ", level );
+    vfprintf( logStream, format, arg );
+    fprintf( logStream, "\n" );
 
     if ( uciDebug )
     {

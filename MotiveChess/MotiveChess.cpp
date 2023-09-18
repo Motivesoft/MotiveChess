@@ -68,6 +68,19 @@ bool processCommandLine( Engine& engine, const std::string& switchPrefix, const 
 					success = false;
 				}
 			}
+			else if ( flag == "logfile" )
+			{
+				if ( it + 1 != args.cend() )
+				{
+					it++;
+					engine.setLogFile( *it );
+				}
+				else
+				{
+					std::cerr << "Missing log file: " << std::endl;
+					success = false;
+				}
+			}
 			else
 			{
 				std::cerr << "Unrecognised argument: " << *it << std::endl;
