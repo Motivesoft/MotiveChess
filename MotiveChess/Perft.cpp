@@ -1,7 +1,9 @@
 #include "Perft.h"
 
+#include <cmath>
 #include <fstream>
 #include <iostream>
+#include <stdint.h>
 
 #include "Fen.h"
 

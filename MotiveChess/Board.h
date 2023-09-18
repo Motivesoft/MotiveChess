@@ -142,12 +142,62 @@ private:
 
     inline static unsigned char scanForward( unsigned long* index, unsigned long long mask )
     {
+#if _WIN32
         return _BitScanForward64( index, mask );
+#elif __linux__
+        // TODO find an intrinsic or builtin for this
+        if ( mask == 0 )
+        {
+            return 0;
+        }
+
+        unsigned long long bit = 0b0000000000000000000000000000000000000000000000000000000000000001;
+        unsigned long bitIndex = 0;
+        while ( bit != 0 )
+        {
+            if ( mask & bit )
+            {
+                *index = bitIndex;
+                break;
+            }
+
+            bitIndex++;
+            bit <<= 1;
+        }
+
+        // Just needs to be something non-zero
+        return !0;
+#endif
     }
 
     inline static unsigned char scanReverse( unsigned long* index, unsigned long long mask )
     {
+#if _WIN32
         return _BitScanReverse64( index, mask );
+#elif __linux__
+        // TODO find an intrinsic or builtin for this
+        if ( mask == 0 )
+        {
+            return 0;
+        }
+
+        unsigned long long bit = 0b1000000000000000000000000000000000000000000000000000000000000000;
+        unsigned long bitIndex = 63;
+        while ( bit != 0 )
+        {
+            if ( mask & bit )
+            {
+                *index = bitIndex;
+                break;
+            }
+
+            bit >>= 1;
+            bitIndex--;
+        }
+
+        // Just needs to be something non-zero
+        return !0;
+#endif
     }
 
     void getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner );
