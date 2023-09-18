@@ -42,7 +42,7 @@ private:
     /// </summary>
     /// <param name="line">a long string, potentially containing multiple words (space-separated smaller strings)</param>
     /// <returns>the first word from the line, or empty string if none</returns>
-    static inline std::pair<std::string, std::string> firstWord( const std::string& line ) const
+    static inline std::pair<std::string, std::string> firstWord( const std::string& line )
     {
         std::string trimmed = trim( line );
         std::pair<std::string, std::string> result;
@@ -68,7 +68,7 @@ private:
     /// </summary>
     /// <param name="string">the input string</param>
     /// <returns></returns>
-    static std::string trim( const std::string& string ) const
+    static std::string trim( const std::string& string )
     {
         std::string trimmed = string;
         while ( trimmed.starts_with( " " ) )
