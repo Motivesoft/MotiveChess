@@ -5,33 +5,6 @@
 
 int main( int argc, char** argv )
 {
-	//printf( "\n" );
-	//printf( "\x1B[31mTextin\033[0mg\t\t" );
-	//printf( "\x1B[32mTextin\033[0mg\t\t" );
-	//printf( "\x1B[33mTextin\033[0mg\t\t" );
-	//printf( "\x1B[34mTextin\033[0mg\t\t" );
-	//printf( "\x1B[35mTextin\033[0mg\n" );
-
-	//printf( "\x1B[36mTexting\033[0m\t\t" );
-	//printf( "\x1B[37mTexting\033[0m\t\t" );
-	//printf( "\x1B[38mTexting\033[0m\t\t" );
-	//printf( "\x1B[39mTexting\033[0m\t\t" );
-	//printf( "\x1B[40mTexting\033[0m\n" );
-
-	//printf( "\x1B[93mTexting\033[0m\n" );
-
-	//printf( "\033[3;42;30mTexting\033[0m\t\t" );
-	//printf( "\033[3;43;30mTexting\033[0m\t\t" );
-	//printf( "\033[3;44;30mTexting\033[0m\t\t" );
-	//printf( "\033[3;104;30mTexting\033[0m\t\t" );
-	//printf( "\033[3;100;30mTexting\033[0m\n" );
-
-	//printf( "\033[3;47;35mTexting\033[0m\t\t" );
-	//printf( "\033[2;47;35mTexting\033[0m\t\t" );
-	//printf( "\033[1;47;35mTexting\033[0m\t\t" );
-	//printf( "\t\t" );
-	//printf( "\n" );
-	//return 0;
 	std::cout << "MotiveChess 0.1" << std::endl;
 
 	std::vector<std::string> args;

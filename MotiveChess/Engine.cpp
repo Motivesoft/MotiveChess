@@ -16,13 +16,13 @@
 #include "Perft.h"
 
 // Loggers from static methods
-#define DEBUG_S(engine,...) if( engine.debug ){ engine.debuglog( __VA_ARGS__ ); }
+#define DEBUG_S(engine,...) if( engine.debug ){ engine.log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { engine.log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
 #define ERROR_S(engine,...) { engine.log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
 
 // Loggers from non-static methods
-#define DEBUG(...) if( debug ){ debuglog( __VA_ARGS__ ); }
+#define DEBUG(...) if( debug ){ log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO(...) { log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN(...) { log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
 #define ERROR(...) { log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
@@ -711,32 +711,6 @@ void Engine::resetGame( Engine& engine )
 
 // Logging
 
-void Engine::debuglog( const char* format, ... ) const
-{
-    va_list arg;
-    va_start( arg, format );
-
-    // Logging to file
-    if ( logFile.has_value() )
-    {
-        fprintf( logStream, "DEBUG : " );
-        vfprintf( logStream, format, arg );
-        fprintf( logStream, "\n" );
-    }
-
-    // Logging to console
-    if ( !logFile.has_value() || tee )
-    {
-        fprintf( stderr, "\x1B[36m" );
-        fprintf( stderr, "DEBUG : " );
-        vfprintf( stderr, format, arg );
-        fprintf( stderr, "\033[0m\t\t" );
-        fprintf( stderr, "\n" );
-    }
-
-    va_end( arg );
-}
-
 void Engine::log( Engine::LogLevel level, const char* format, ... ) const
 {
     static const char* LevelColors[] = { "\x1B[36m", "\x1B[32m", "\x1B[33m", "\x1B[31m" };
@@ -762,7 +736,10 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
         fprintf( stderr, "\n" );
     }
 
-    if ( uciDebug )
+    // Pass anything WARN or higher to UCI
+    // Pass anything higher than DEBUG to UCI if "DEBUG ON" has been called
+    if ( level > Engine::LogLevel::WARN ||
+         ( level > Engine::LogLevel::DEBUG && uciDebug ) )
     {
         infoBroadcast( "string", format, arg );
     }

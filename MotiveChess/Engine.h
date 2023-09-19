@@ -92,7 +92,6 @@ private:
         return trimmed;
     }
 
-    void debuglog( const char* format, ... ) const;
     void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
