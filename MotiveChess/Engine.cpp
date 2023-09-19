@@ -57,6 +57,7 @@ Engine::Engine() :
     stopThinking( false )
 {
 }
+
 void Engine::initialize()
 {
     // Sort out the logging first
