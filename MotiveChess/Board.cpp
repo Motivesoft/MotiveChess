@@ -992,3 +992,41 @@ short Board::scorePosition( bool scoreForWhite ) const
 
     return static_cast<short>( scoreForWhite ? score : -score );
 }
+
+// TODO make this method const - which also means doing getMoves and children
+// TODO check that score is correctly returning the value (-1,0,+1)
+bool Board::isTerminal( short& score )
+{
+    std::vector<Move> moves;
+    moves.reserve( 256 );
+    getMoves( moves );
+
+    if ( moves.size() == 0 )
+    {
+        unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
+        if ( failsCheckTests( king, !Piece::isWhite( activeColor ) ) )
+        {
+            score = -1; // activeColor loses
+            return true;
+        }
+        else
+        {
+            score = 0; // stalemate
+            return true;
+        }
+    }
+    else
+    {
+        unsigned long long king = bitboards[ ( whiteToMove ? BLACK : WHITE ) + KING ];
+        if ( failsCheckTests( king, Piece::isWhite( activeColor ) ) )
+        {
+            score = +1; // We can take the opponent's king and therefore, win
+            return true;
+        }
+    }
+
+    return false;
+
+    // TODO complete this
+    return false;
+}

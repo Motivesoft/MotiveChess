@@ -210,11 +210,7 @@ public:
     void applyMove( const Move& move );
 
     short scorePosition( bool scoreForWhite ) const;
-    bool isTerminal( short& score ) const
-    {
-        // TODO complete this
-        return false;
-    }
+    bool isTerminal( short& score );
 
     inline bool whiteToPlay() const
     {
