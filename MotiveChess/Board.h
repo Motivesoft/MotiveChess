@@ -148,7 +148,7 @@ private:
 
     inline static unsigned char scanForward( unsigned long* index, unsigned long long mask )
     {
-#if _WIN32
+#ifdef _WIN32
         return _BitScanForward64( index, mask );
 #elif __linux__
         if ( mask > 0 )
@@ -163,7 +163,7 @@ private:
 
     inline static unsigned char scanReverse( unsigned long* index, unsigned long long mask )
     {
-#if _WIN32
+#ifdef _WIN32
         return _BitScanReverse64( index, mask );
 #elif __linux__
         if ( mask > 0 )

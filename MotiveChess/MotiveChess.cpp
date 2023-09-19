@@ -13,7 +13,7 @@ int main( int argc, char** argv )
 		args.push_back( argv[ loop ] );
 	}
 
-#if _WIN32
+#ifdef _WIN32
 	std::string switchPrefix = "-";
 #elif __linux__
 	std::string switchPrefix = "--";
