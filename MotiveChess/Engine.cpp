@@ -17,15 +17,15 @@
 
 // Loggers from static methods
 #define DEBUG_S(engine,...) if( engine.debug ){ engine.debuglog( __VA_ARGS__ ); }
-#define INFO_S(engine,...) { engine.log( "INFO ", __VA_ARGS__ ); }
-#define WARN_S(engine,...) { engine.log( "WARN ", __VA_ARGS__ ); }
-#define ERROR_S(engine,...) { engine.log( "ERROR", __VA_ARGS__ ); }
+#define INFO_S(engine,...) { engine.log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
+#define WARN_S(engine,...) { engine.log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
+#define ERROR_S(engine,...) { engine.log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
 
 // Loggers from non-static methods
 #define DEBUG(...) if( debug ){ debuglog( __VA_ARGS__ ); }
-#define INFO(...) { log( "INFO ", __VA_ARGS__ ); }
-#define WARN(...) { log( "WARN ", __VA_ARGS__ ); }
-#define ERROR(...) { log( "ERROR", __VA_ARGS__ ); }
+#define INFO(...) { log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
+#define WARN(...) { log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
+#define ERROR(...) { log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
 
 std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 {
@@ -716,35 +716,49 @@ void Engine::debuglog( const char* format, ... ) const
     va_list arg;
     va_start( arg, format );
 
-    fprintf( logStream, "DEBUG : " );
-    vfprintf( logStream, format, arg );
-    fprintf( logStream, "\n" );
-
-    // If we're logging to a file and we specified tee, also log to stderr
-    if ( tee && logFile.has_value() )
+    // Logging to file
+    if ( logFile.has_value() )
     {
+        fprintf( logStream, "DEBUG : " );
+        vfprintf( logStream, format, arg );
+        fprintf( logStream, "\n" );
+    }
+
+    // Logging to console
+    if ( !logFile.has_value() || tee )
+    {
+        fprintf( stderr, "\x1B[36m" );
         fprintf( stderr, "DEBUG : " );
         vfprintf( stderr, format, arg );
+        fprintf( stderr, "\033[0m\t\t" );
         fprintf( stderr, "\n" );
     }
 
     va_end( arg );
 }
 
-void Engine::log( const char* level, const char* format, ... ) const
+void Engine::log( Engine::LogLevel level, const char* format, ... ) const
 {
+    static const char* LevelColors[] = { "\x1B[36m", "\x1B[32m", "\x1B[33m", "\x1B[31m" };
+    static const char* LevelNames[] = {"DEBUG", "INFO ", "WARN ", "ERROR"};
+
     va_list arg;
     va_start( arg, format );
 
-    fprintf( logStream, "%s : ", level );
-    vfprintf( logStream, format, arg );
-    fprintf( logStream, "\n" );
-
-    // If we're logging to a file and we specified tee, also log to stderr
-    if ( tee && logFile.has_value() )
+    // Logging to file
+    if ( logFile.has_value() )
     {
-        fprintf( stderr, "%s : ", level );
+        fprintf( logStream, "%s : ", LevelNames[ level ] );
+        vfprintf( logStream, format, arg );
+        fprintf( logStream, "\n" );
+    }
+
+    // Logging to console
+    if ( !logFile.has_value() || tee )
+    {
+        fprintf( stderr, "%s%s : ", LevelColors[ level ], LevelNames[ level ] );
         vfprintf( stderr, format, arg );
+        fprintf( stderr, "\033[0m\t\t" );
         fprintf( stderr, "\n" );
     }
 

@@ -13,6 +13,11 @@
 class Engine
 {
 private:
+    enum LogLevel
+    {
+        DEBUG, INFO, WARN, ERROR
+    };
+
     typedef void ( *CommandHandler )( Engine& engine, const std::string& arguments );
 
     static std::map<const std::string, CommandHandler> commandHandlers;
@@ -88,7 +93,7 @@ private:
     }
 
     void debuglog( const char* format, ... ) const;
-    void log( const char* level, const char* format, ... ) const;
+    void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite ) const;
