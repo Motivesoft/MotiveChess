@@ -276,9 +276,9 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
 {
     static const std::vector<std::string> goParameters = { "searchmoves", "ponder", "wtime", "btime", "winc", "binc", "movestogo", "depth", "nodes", "mate", "movetime", "infinite" };
 
-    INFO_S( engine, "Processing go command" );
+    INFO_S( engine, "Processing go command with: %s", arguments.c_str() );
 
-    // TODO parse lots of commands and start a thinking thread
+    // TODO start a thinking thread
     // TODO remember to set 'stopThinking' to false
     // The thinking thread can take the stagedPosition and these 'go' arguments
     // ...it'll need a reference to this engine, too, to monitor the stop flag
@@ -451,6 +451,8 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         moves.push_back( Move( details.first.c_str() ) );
         details = firstWord( details.second );
     }
+    
+    DEBUG_S( engine, "Using : %s and %d additional move(s)", engine.stagedPosition.c_str(), moves.size());
 
     Board* board = Board::createBoard( fenString );
     for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
@@ -900,7 +902,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         // Why? Win (+1), Loss (-1) or Stalemate (0)
         if ( score == 0 )
         {
-            //DEBUG( "Score : 0" );
+            DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
             return 0;
         }
         else
@@ -911,6 +913,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
 
             //DEBUG( "Score: %d. ToPlay: %s. EvalFor: %s", score, (board.whiteToPlay() ? "White" : "Black"), ( asWhite ? "White" : "Black" ) );
+            DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
 
             // Give it a critially large value, but not quite at lowest/highest...
             // so we have some wiggle room so we can make one winning line seem preferable to another
@@ -934,6 +937,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     if ( depth == 0 )
     {
         score = board.scorePosition( asWhite );
+        DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
         return score;
     }
 
@@ -949,6 +953,8 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
+            INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
+
             board.applyMove( *it );
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
             board.unmakeMove( undo );
@@ -963,7 +969,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( beta <= alpha )
             {
-                //DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -982,6 +988,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
         {
+            INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
             board.unmakeMove( undo );
@@ -996,7 +1003,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( beta <= alpha )
             {
-                //DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
