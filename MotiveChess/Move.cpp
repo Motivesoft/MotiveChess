@@ -11,7 +11,7 @@ const unsigned long Move::BISHOP = 0b00000000000000000101000000000000;
 const unsigned long Move::ROOK = 0b00000000000000000110000000000000;
 const unsigned long Move::QUEEN = 0b00000000000000000111000000000000;
 
-const Move Move::nullMove( 0 );
+const Move Move::nullMove( 0, 0 ); // all zeros, as suggested by UCI spec
 
 Move::Move( const char* moveString )
 {
@@ -50,6 +50,12 @@ Move::Move( unsigned long from, unsigned long to, unsigned long promotion ) :
 
 std::string Move::toString() const
 {
+    if ( isNullMove() )
+    {
+        // See UCI spec
+        return "0000";
+    }
+
     std::stringstream move;
 
     unsigned char fromRank = ( moveBits >> 9 ) & 0b00000111;

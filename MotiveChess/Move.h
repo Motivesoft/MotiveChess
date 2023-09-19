@@ -45,7 +45,7 @@ public:
         return moveBits & PROMOTION_MASK;
     }
 
-    inline bool isNullMove()
+    inline bool isNullMove() const
     {
         return moveBits == 0;
     }
