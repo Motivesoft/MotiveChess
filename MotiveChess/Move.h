@@ -14,9 +14,21 @@ public:
     static const unsigned long ROOK;
     static const unsigned long QUEEN;
 
+    static const Move nullMove;
+
     Move( const char* moveString );
 
     Move( unsigned long from, unsigned long to, unsigned long promotion = 0 );
+
+    bool operator==( const Move& other ) const 
+    {
+        return moveBits == other.moveBits;
+    }
+
+    bool operator!=( const Move& other ) const
+    {
+        return moveBits != other.moveBits;
+    }
 
     inline unsigned short getFrom() const
     {
@@ -31,6 +43,11 @@ public:
     inline unsigned long getPromotion() const
     {
         return moveBits & PROMOTION_MASK;
+    }
+
+    inline bool isNullMove()
+    {
+        return moveBits == 0;
     }
 
     std::string toString() const;

@@ -11,6 +11,8 @@ const unsigned long Move::BISHOP = 0b00000000000000000101000000000000;
 const unsigned long Move::ROOK = 0b00000000000000000110000000000000;
 const unsigned long Move::QUEEN = 0b00000000000000000111000000000000;
 
+const Move Move::nullMove( 0 );
+
 Move::Move( const char* moveString )
 {
     unsigned long from = ( ( moveString[ 1 ] - '1' ) << 3 ) | ( moveString[ 0 ] - 'a' );

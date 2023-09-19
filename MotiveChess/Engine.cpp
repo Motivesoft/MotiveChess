@@ -762,6 +762,9 @@ void Engine::Search::start( const Engine& engine )
 
     unsigned int depth = goArgs->getDepth();
 
+    Move bestMove = Move::nullMove;
+    Move ponderMove = Move::nullMove;
+
     // Keep going until we are told to quit, or to stop thinking once we have a candidate move
     bool readyToMove = false;
     while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
@@ -769,18 +772,92 @@ void Engine::Search::start( const Engine& engine )
         // TODO remove this when we're ready
         DEBUG_S( engine, "Current position scores: %d", board->scorePosition( board->whiteToPlay() ) );
 
+        // Get candidate moves
+        std::vector<Move> moves;
+        moves.reserve( 256 );
+         
+        board->getMoves( moves );
+
+        // Filter on searchMoves, if there are any
+        if ( !goArgs->getSearchMoves().empty() )
+        {
+            for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
+            {
+                if ( std::find( goArgs->getSearchMoves().begin(), goArgs->getSearchMoves().end(), *it ) == goArgs->getSearchMoves().end() )
+                {
+                    it = moves.erase( it );
+                }
+                else
+                {
+                    it++;
+                }
+            }
+        
+            if ( moves.empty() )
+            {
+                ERROR_S( engine, "No matching searchmoves" );
+
+                // Stopping seems the appropriate action here
+                readyToMove = true;
+                break;
+            }
+        }
+
+        if ( moves.empty() )
+        {
+            ERROR_S( engine, "No moves available" );
+
+            // Stopping seems the appropriate action here, too
+            readyToMove = true;
+            break;
+        }
+
+        // TODO sort moves
+        
         // TODO go into minmax
+        unsigned short bestScore = std::numeric_limits<short>::lowest();
+        Board::State undo( board.get() );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
+        {
+            // TODO delete this when we're happy
+            DEBUG_S( engine, "Considering %s", ( *it ).toString() );
+
+            board->applyMove( *it );
+            short score = engine.minmax( *(board.get()),
+                                          depth,
+                                          std::numeric_limits<short>::lowest(),
+                                          std::numeric_limits<short>::max(),
+                                          false,
+                                          board->whiteToPlay() );
+            board->unmakeMove( undo );
+
+            if ( score > bestScore )
+            {
+                bestScore = score;
+                bestMove = *it;
+            }
+
+            DEBUG_S( engine, "  score for %s is %d", ( *it ).toString(), score );
+        }
     }
 
     if ( !engine.quitting ) 
     {
         // TODO broadcast bestmove
+        if ( ponderMove.isNullMove() )
+        {
+            engine.bestmoveBroadcast( bestMove );
+        }
+        else
+        {
+            engine.bestmoveBroadcast( bestMove, ponderMove );
+        }
     }
 
     DEBUG_S( engine, "Search completed" );
 }
 
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite )
+short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
