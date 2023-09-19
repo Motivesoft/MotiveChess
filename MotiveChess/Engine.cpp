@@ -902,7 +902,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         // Why? Win (+1), Loss (-1) or Stalemate (0)
         if ( score == 0 )
         {
-            DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+            //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
             return 0;
         }
         else
@@ -912,8 +912,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score = -score;
             }
 
-            //DEBUG( "Score: %d. ToPlay: %s. EvalFor: %s", score, (board.whiteToPlay() ? "White" : "Black"), ( asWhite ? "White" : "Black" ) );
-            DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
+            //DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
 
             // Give it a critially large value, but not quite at lowest/highest...
             // so we have some wiggle room so we can make one winning line seem preferable to another
@@ -937,7 +936,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     if ( depth == 0 )
     {
         score = board.scorePosition( asWhite );
-        DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        //DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
         return score;
     }
 
@@ -953,7 +952,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
+            //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
 
             board.applyMove( *it );
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
@@ -988,7 +987,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
         {
-            INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
+            //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
             board.unmakeMove( undo );

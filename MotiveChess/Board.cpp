@@ -1006,13 +1006,13 @@ bool Board::isTerminal( short& score )
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
         if ( isAttacked( king, whiteToMove ) )
         {
-            fprintf( stderr, "Think this is a loss for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
+            //fprintf( stderr, "Think this is a loss for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
             score = -1; // activeColor loses
             return true;
         }
         else
         {
-            fprintf( stderr, "Think this is stalemate" );
+            //fprintf( stderr, "Think this is stalemate" );
             score = 0; // stalemate
             return true;
         }
@@ -1022,7 +1022,7 @@ bool Board::isTerminal( short& score )
         unsigned long long king = bitboards[ ( whiteToMove ? BLACK : WHITE ) + KING ];
         if ( isAttacked( king, !whiteToMove ) )
         {
-            fprintf( stderr, "Think this is a win for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
+            //fprintf( stderr, "Think this is a win for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
             score = +1; // We can take the opponent's king and therefore, win
             return true;
         }
