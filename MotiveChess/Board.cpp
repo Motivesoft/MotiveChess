@@ -1004,7 +1004,7 @@ bool Board::isTerminal( short& score )
     if ( moves.size() == 0 )
     {
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
-        if ( failsCheckTests( king, !Piece::isWhite( activeColor ) ) )
+        if ( isAttacked( king, !whiteToMove ) )
         {
             score = -1; // activeColor loses
             return true;
@@ -1018,15 +1018,12 @@ bool Board::isTerminal( short& score )
     else
     {
         unsigned long long king = bitboards[ ( whiteToMove ? BLACK : WHITE ) + KING ];
-        if ( failsCheckTests( king, Piece::isWhite( activeColor ) ) )
+        if ( isAttacked( king, whiteToMove ) )
         {
             score = +1; // We can take the opponent's king and therefore, win
             return true;
         }
     }
 
-    return false;
-
-    // TODO complete this
     return false;
 }
