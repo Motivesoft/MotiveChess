@@ -762,9 +762,14 @@ void Engine::Search::start( const Engine& engine )
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
     DEBUG_S( engine, "Starting a search" );
 
-    while ( !engine.quitting && !engine.stopThinking )
+    // Keep going until we are told to quit, or to stop thinking once we have a candidate move
+    bool readyToMove = false;
+    while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
     {
+        // TODO remove this when we're ready
+        DEBUG_S( engine, "Current position scores: %d", board->scorePosition( board->whiteToPlay() ) );
 
+        // TODO go into minmax
     }
 
     if ( !engine.quitting )

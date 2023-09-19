@@ -948,3 +948,21 @@ void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& 
         moves.emplace_back( index, otherIndex );
     }
 }
+
+short Board::scorePosition( bool scoreForWhite ) const
+{
+    static const long long pieceWeights[] =
+    {
+        100, 310, 320, 500, 900, 10000
+    };
+
+    // For each piece
+    long long score = 0;
+    for ( unsigned short loop = 0; loop < 6; loop++ )
+    {
+        score += pieceWeights[ loop ] * __popcnt64( bitboards[ WHITE + loop ] );
+        score -= pieceWeights[ loop ] * __popcnt64( bitboards[ BLACK + loop ] );
+    }
+
+    return static_cast<short>( scoreForWhite ? score : -score );
+}

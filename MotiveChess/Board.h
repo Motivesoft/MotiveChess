@@ -206,5 +206,12 @@ public:
     void unmakeMove( const Board::State& state );
 
     void applyMove( const Move& move );
+
+    short scorePosition( bool scoreForWhite ) const;
+
+    inline bool whiteToPlay() const
+    {
+        return whiteToMove;
+    }
 };
 
