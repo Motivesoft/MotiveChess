@@ -28,10 +28,12 @@ int main( int argc, char** argv )
 	}
 	else
 	{
-		std::cout << std::endl << "Arugments:" << std::endl;
-		std::cout << "  " << switchPrefix << "debug             : turn on debug mode" << std::endl;
-		std::cout << "  " << switchPrefix << "input [filename]  : read input from [filename], rather than the console" << std::endl;
-		std::cout << "  " << switchPrefix << "help              : this information" << std::endl;
+		std::cout << std::endl << "Arguments:" << std::endl;
+		std::cout << "  " << switchPrefix << "debug              : turn on debug mode" << std::endl;
+		std::cout << "  " << switchPrefix << "logfile [filename] : log to [filename], rather than to stderr (console)" << std::endl;
+		std::cout << "  " << switchPrefix << "tee                : when used with '" << switchPrefix << "logfile', log to file and stderr (console)" << std::endl;
+		std::cout << "  " << switchPrefix << "input [filename]   : read input from [filename], rather than the console" << std::endl;
+		std::cout << "  " << switchPrefix << "help               : this information" << std::endl;
 	}
 
 	// Exit
@@ -51,9 +53,13 @@ bool processCommandLine( Engine& engine, const std::string& switchPrefix, const 
 			{
 				success = false;
 			}
-			if ( flag == "debug" )
+			else if ( flag == "debug" )
 			{
 				engine.setDebug();
+			}
+			else if ( flag == "tee" )
+			{
+				engine.setTee();
 			}
 			else if ( flag == "input" )
 			{

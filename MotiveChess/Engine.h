@@ -18,6 +18,7 @@ private:
     static std::map<const std::string, CommandHandler> commandHandlers;
 
     bool debug;
+    bool tee;
     std::optional<std::string> inputFile;
     std::optional<std::string> logFile;
     FILE* broadcastStream;
@@ -92,12 +93,19 @@ private:
 
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite ) const;
 
+    void stopImpl();
+
 public:
     Engine();
 
     void setDebug()
     {
         debug = true;
+    }
+
+    void setTee()
+    {
+        tee = true;
     }
 
     void setInputFile( const std::string filename )

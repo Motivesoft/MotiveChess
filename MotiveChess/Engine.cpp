@@ -48,6 +48,7 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 
 Engine::Engine() :
     debug( false ),
+    tee( false ),
     uciDebug( false ),
     registered( false ),
     quitting( false ),
@@ -465,10 +466,7 @@ void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing stop command" );
 
-    // TODO more here - we should broadcast bestmove - but not if we are quitting; 
-    // TODO make this a blocking action
-    // TODO only do all this if we are currently thinking
-    engine.stopThinking = true;
+    engine.stopImpl();
 }
 
 void Engine::ponderhitCommand( Engine& engine, const std::string& arguments )
@@ -484,8 +482,7 @@ void Engine::quitCommand( Engine& engine, const std::string& arguments )
 
     engine.quitting = true;
 
-    // TODO change this to whatever does the blocking wait
-    stopCommand( engine, std::string() );
+    engine.stopImpl();
 }
 
 void Engine::perftCommand( Engine& engine, const std::string& arguments )
@@ -695,12 +692,19 @@ void Engine::perftFile( const std::string& filename, bool divide ) const
 
 // Other internal functions
 
+void Engine::stopImpl()
+{
+    // TODO make this a blocking action
+    // TODO only do all this if we are currently thinking
+    stopThinking = true;
+}
+
 void Engine::resetGame( Engine& engine )
 {
     // It is possible we will not get a ucinewgame, so encode the same game reset logic in 'position'
 
     // TODO call some silent version of stop, not the specific UCI command?
-    stopCommand( engine, std::string() );
+    engine.stopImpl();
 
     engine.stagedPosition = Fen::startingPositionReference;
 }
@@ -716,6 +720,14 @@ void Engine::debuglog( const char* format, ... ) const
     vfprintf( logStream, format, arg );
     fprintf( logStream, "\n" );
 
+    // If we're logging to a file and we specified tee, also log to stderr
+    if ( tee && logFile.has_value() )
+    {
+        fprintf( stderr, "DEBUG : " );
+        vfprintf( stderr, format, arg );
+        fprintf( stderr, "\n" );
+    }
+
     va_end( arg );
 }
 
@@ -727,6 +739,14 @@ void Engine::log( const char* level, const char* format, ... ) const
     fprintf( logStream, "%s : ", level );
     vfprintf( logStream, format, arg );
     fprintf( logStream, "\n" );
+
+    // If we're logging to a file and we specified tee, also log to stderr
+    if ( tee && logFile.has_value() )
+    {
+        fprintf( stderr, "%s : ", level );
+        vfprintf( stderr, format, arg );
+        fprintf( stderr, "\n" );
+    }
 
     if ( uciDebug )
     {
@@ -753,7 +773,6 @@ Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
     board( std::make_shared<Board>( board ) ),
     goArgs( std::make_shared<GoArguments>( goArgs ) )
 {
-
 }
 
 void Engine::Search::start( const Engine& engine )
@@ -890,7 +909,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         // Why? Win (+1), Loss (-1) or Stalemate (0)
         if ( score == 0 )
         {
-            DEBUG( "Score : 0" );
+            //DEBUG( "Score : 0" );
             return 0;
         }
         else
@@ -900,7 +919,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score = -score;
             }
 
-            DEBUG( "Score: %d. ToPlay: %s. EvalFor: %s", score, (board.whiteToPlay() ? "White" : "Black"), ( asWhite ? "White" : "Black" ) );
+            //DEBUG( "Score: %d. ToPlay: %s. EvalFor: %s", score, (board.whiteToPlay() ? "White" : "Black"), ( asWhite ? "White" : "Black" ) );
 
             // Give it a critially large value, but not quite at lowest/highest...
             // so we have some wiggle room so we can make one winning line seem preferable to another
@@ -953,7 +972,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( beta <= alpha )
             {
-                DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                //DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -986,7 +1005,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( beta <= alpha )
             {
-                DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                //DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
