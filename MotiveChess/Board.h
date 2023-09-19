@@ -198,8 +198,10 @@ public:
 
     public:
         State( const Board* board );
+        State( const Board& board );
 
         void apply( Board* board ) const;
+        void apply( Board& board ) const;
     };
 
     Board::State makeMove( const Move& move );
@@ -208,6 +210,11 @@ public:
     void applyMove( const Move& move );
 
     short scorePosition( bool scoreForWhite ) const;
+    bool isTerminal( short& score ) const
+    {
+        // TODO complete this
+        return false;
+    }
 
     inline bool whiteToPlay() const
     {

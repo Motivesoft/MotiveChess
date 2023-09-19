@@ -551,6 +551,7 @@ unsigned short Board::bitboardArrayIndexFromPiece( const char piece )
     }
 }
 
+// TODO get rid of pointer based ctor and apply method if we can
 Board::State::State( const Board* board ) :
     bitboards( board->bitboards ),
     whiteToMove( board->whiteToMove ),
@@ -558,6 +559,16 @@ Board::State::State( const Board* board ) :
     enPassantIndex( board->enPassantIndex ),
     halfMoveClock( board->halfMoveClock ),
     fullMoveNumber( board->fullMoveNumber )
+{
+}
+
+Board::State::State( const Board& board ) :
+    bitboards( board.bitboards ),
+    whiteToMove( board.whiteToMove ),
+    castlingRights( board.castlingRights ),
+    enPassantIndex( board.enPassantIndex ),
+    halfMoveClock( board.halfMoveClock ),
+    fullMoveNumber( board.fullMoveNumber )
 {
 }
 
@@ -569,6 +580,16 @@ void Board::State::apply( Board* board ) const
     board->enPassantIndex = enPassantIndex;
     board->halfMoveClock = halfMoveClock;
     board->fullMoveNumber = fullMoveNumber;
+}
+
+void Board::State::apply( Board& board ) const
+{
+    board.bitboards = bitboards;
+    board.whiteToMove = whiteToMove;
+    board.castlingRights = castlingRights;
+    board.enPassantIndex = enPassantIndex;
+    board.halfMoveClock = halfMoveClock;
+    board.fullMoveNumber = fullMoveNumber;
 }
 
 void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces )

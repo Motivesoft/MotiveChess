@@ -11,6 +11,7 @@
 #include "BitBoard.h"
 #include "Fen.h"
 #include "GoArguments.h"
+#include "Move.h"
 #include "Perft.h"
 
 // Loggers from static methods
@@ -297,35 +298,12 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
 
             details = firstWord( details.second );
         }
-        else if ( details.first == "searchmoves" )
-        {
-            std::vector<Move> searchMoves;
-
-            details = firstWord( details.second );
-            while ( !details.first.empty() )
-            {
-                searchMoves.push_back( Move( details.first.c_str() ) );
-
-                details = firstWord( details.second );
-
-                // TODO if 'first' is one of the other 'go' keywords, break out of here
-                if ( std::find( goParameters.cbegin(), goParameters.cend(), details.first ) != goParameters.cend() )
-                {
-                    break;
-                }
-            }
-
-            builder.setSearchMoves( searchMoves );
-        }
         else if ( details.first == "wtime" )
         {
-            // Promote the next argument - the value - to the front
             details = firstWord( details.second );
 
-            // Capture it
             builder.setWTime( atoi( details.first.c_str() ) );
 
-            // Move forwards to the next thing
             details = firstWord( details.second );
         }
         else if ( details.first == "btime" )
@@ -344,7 +322,7 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
 
             details = firstWord( details.second );
         }
-        else if( details.first == "binc" )
+        else if ( details.first == "binc" )
         {
             details = firstWord( details.second );
 
@@ -391,7 +369,27 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
             builder.setMoveTime( atoi( details.first.c_str() ) );
 
             details = firstWord( details.second );
+        }
+        else if ( details.first == "searchmoves" )
+        {
+            std::vector<Move> searchMoves;
+
+            details = firstWord( details.second );
+            while ( !details.first.empty() )
+            {
+                searchMoves.push_back( Move( details.first.c_str() ) );
+
+                details = firstWord( details.second );
+
+                // TODO if 'first' is one of the other 'go' keywords, break out of here
+                if ( std::find( goParameters.cbegin(), goParameters.cend(), details.first ) != goParameters.cend() )
+                {
+                    break;
+                }
             }
+
+            builder.setSearchMoves( searchMoves );
+        }
         else
         {
             ERROR_S( engine, "Ignoring unsupported go option: %s", details.first.c_str() );
@@ -762,6 +760,8 @@ void Engine::Search::start( const Engine& engine )
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
     DEBUG_S( engine, "Starting a search" );
 
+    unsigned int depth = goArgs->getDepth();
+
     // Keep going until we are told to quit, or to stop thinking once we have a candidate move
     bool readyToMove = false;
     while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
@@ -772,10 +772,133 @@ void Engine::Search::start( const Engine& engine )
         // TODO go into minmax
     }
 
-    if ( !engine.quitting )
+    if ( !engine.quitting ) 
     {
         // TODO broadcast bestmove
     }
 
     DEBUG_S( engine, "Search completed" );
+}
+
+short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite )
+{
+    // Make some working values so we are not "editing" method parameters
+    short alpha = alphaInput;
+    short beta = betaInput;
+
+    // If is win, return max
+    // If is loss, return lowest
+    // If draw, return 0
+    // otherwise iterate
+
+    // Simple win semantics
+    short score = 0;
+    if ( board.isTerminal( score ) )
+    {
+        // Why? Win (+1), Loss (-1) or Stalemate (0)
+        if ( score == 0 )
+        {
+            DEBUG( "Score : 0" );
+            return 0;
+        }
+        else
+        {
+            if ( board.whiteToPlay() != asWhite )
+            {
+                score = -score;
+            }
+
+            DEBUG( "Score: %d. ToPlay: %s. EvalFor: %s", score, (board.whiteToPlay() ? "White" : "Black"), ( asWhite ? "White" : "Black" ) );
+
+            // Give it a critially large value, but not quite at lowest/highest...
+            // so we have some wiggle room so we can make one winning line seem preferable to another
+            score = score < 0 ? std::numeric_limits<short>::lowest() + 1000 : std::numeric_limits<short>::max() - 1000;
+
+            // Adjusting the return with the depth means that it'll chase shorter lines to terminal positions rather
+            // than just settling for a forced mate being something it can commit to at any time
+            if ( score < 0 )
+            {
+                score -= depth;
+            }
+            else
+            {
+                score += depth;
+            }
+
+            return score;
+        }
+    }
+
+    if ( depth == 0 )
+    {
+        score = board.scorePosition( asWhite );
+        return score;
+    }
+
+    if ( maximising )
+    {
+        score = std::numeric_limits<short>::lowest();
+
+        std::vector<Move> moves;
+        moves.reserve( 256 );
+        board.getMoves( moves );
+
+        int count = 0;
+        Board::State undo = Board::State( board );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
+        {
+            board.applyMove( *it );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            board.unmakeMove( undo );
+
+            if ( evaluation > score )
+            {
+                score = evaluation;
+            }
+            if ( evaluation > alpha )
+            {
+                alpha = evaluation;
+            }
+            if ( beta <= alpha )
+            {
+                DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                break;
+            }
+        }
+
+        return score;
+    }
+    else
+    {
+        score = std::numeric_limits<short>::max();
+
+        std::vector<Move> moves;
+        moves.reserve( 256 );
+        board.getMoves( moves );
+
+        int count = 0;
+        Board::State undo = Board::State( board );
+        for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
+        {
+            board.applyMove( *it );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            board.unmakeMove( undo );
+
+            if ( evaluation < score )
+            {
+                score = evaluation;
+            }
+            if ( evaluation < alpha )
+            {
+                alpha = evaluation;
+            }
+            if ( beta <= alpha )
+            {
+                DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                break;
+            }
+        }
+
+        return score;
+    }
 }

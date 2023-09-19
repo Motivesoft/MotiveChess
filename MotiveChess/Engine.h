@@ -90,6 +90,8 @@ private:
     void log( const char* level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
+    short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite );
+
 public:
     Engine();
 
