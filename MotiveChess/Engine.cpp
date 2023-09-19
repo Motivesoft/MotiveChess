@@ -766,6 +766,9 @@ void Engine::Search::start( const Engine& engine )
     Move bestMove = Move::nullMove;
     Move ponderMove = Move::nullMove;
 
+    // From whose perspective shall we consider this?
+    bool asWhite = board->whiteToPlay();
+
     // Keep going until we are told to quit, or to stop thinking once we have a candidate move
     bool readyToMove = false;
     while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
@@ -829,7 +832,7 @@ void Engine::Search::start( const Engine& engine )
                                           std::numeric_limits<short>::lowest(),
                                           std::numeric_limits<short>::max(),
                                           false,
-                                          board->whiteToPlay() );
+                                          asWhite );
             board->unmakeMove( undo );
 
             if ( score > bestScore )
