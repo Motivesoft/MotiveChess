@@ -816,12 +816,12 @@ void Engine::Search::start( const Engine& engine )
         // TODO sort moves
         
         // TODO go into minmax
-        unsigned short bestScore = std::numeric_limits<short>::lowest();
+        short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
             // TODO delete this when we're happy
-            DEBUG_S( engine, "Considering %s", ( *it ).toString() );
+            DEBUG_S( engine, "Considering %s", ( *it ).toString().c_str() );
 
             board->applyMove( *it );
             short score = engine.minmax( *(board.get()),
@@ -836,9 +836,20 @@ void Engine::Search::start( const Engine& engine )
             {
                 bestScore = score;
                 bestMove = *it;
+
+                // We at least have a move to make if we get stopped
+                readyToMove = true;
             }
 
-            DEBUG_S( engine, "  score for %s is %d", ( *it ).toString(), score );
+            DEBUG_S( engine, "  score for %s is %d", ( *it ).toString().c_str(), score);
+        }
+
+        depth--;
+
+        // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
+        if ( depth <= 0 && readyToMove )
+        {
+            break;
         }
     }
 
