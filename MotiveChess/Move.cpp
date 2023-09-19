@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+#include <string.h> // for strlen
+
 const unsigned long Move::PROMOTION_MASK = 0b00000000000000000111000000000000;
 const unsigned long Move::KNIGHT = 0b00000000000000000100000000000000;
 const unsigned long Move::BISHOP = 0b00000000000000000101000000000000;

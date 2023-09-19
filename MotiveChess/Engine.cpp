@@ -1,7 +1,6 @@
 #include "Engine.h"
 
-#include <stdio.h> // for fopen_s
-
+#include <algorithm>
 #include <cstdarg>
 #include <fstream>
 #include <istream>
@@ -63,12 +62,12 @@ void Engine::initialize()
     // Sort out the logging first
     if ( logFile.has_value() )
     {
-        errno_t err = fopen_s( &logStream, logFile.value().c_str(), "w");
+        logStream = std::fopen( logFile.value().c_str(), "w" );
 
         if ( logStream == nullptr )
         {
             logStream = stderr;
-            ERROR( "Failed (reason %d) to create logfile: %s", err, logFile.value().c_str() );
+            ERROR( "Failed (reason %d) to create logfile: %s", errno, logFile.value().c_str() );
         }
     }
 

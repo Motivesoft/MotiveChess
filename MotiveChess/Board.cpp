@@ -960,8 +960,13 @@ short Board::scorePosition( bool scoreForWhite ) const
     long long score = 0;
     for ( unsigned short loop = 0; loop < 6; loop++ )
     {
+#ifdef _WIN32
         score += pieceWeights[ loop ] * __popcnt64( bitboards[ WHITE + loop ] );
         score -= pieceWeights[ loop ] * __popcnt64( bitboards[ BLACK + loop ] );
+#elif __linux__
+        score += pieceWeights[ loop ] * _popcnt64( bitboards[ WHITE + loop ] );
+        score -= pieceWeights[ loop ] * _popcnt64( bitboards[ BLACK + loop ] );
+#endif
     }
 
     return static_cast<short>( scoreForWhite ? score : -score );
