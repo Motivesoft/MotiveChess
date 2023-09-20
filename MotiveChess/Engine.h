@@ -96,6 +96,7 @@ private:
     void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
+    short alphaBeta( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 
     void stopImpl();

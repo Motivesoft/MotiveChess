@@ -822,7 +822,23 @@ void Engine::Search::start( const Search* search, const Engine* engine )
         {
             for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
             {
-                if ( std::find( search->goArgs->getSearchMoves().begin(), search->goArgs->getSearchMoves().end(), *it ) == search->goArgs->getSearchMoves().end() )
+                // Generated moves have more context that input moves, so search only the salient parts
+                bool found = false;
+                for ( std::vector<Move>::const_iterator searchIt = search->goArgs->getSearchMoves().cbegin(); searchIt != search->goArgs->getSearchMoves().cend(); searchIt++ )
+                {
+                    const Move& move = *it;
+                    const Move& searchMove = *searchIt;
+
+                    if ( move.getFrom() == searchMove.getFrom() &&
+                         move.getTo() == searchMove.getTo() &&
+                         move.getPromotion() == searchMove.getPromotion() )
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if ( !found )
                 {
                     it = moves.erase( it );
                 }
@@ -915,32 +931,15 @@ void Engine::Search::start( const Search* search, const Engine* engine )
     DEBUG_P( engine, "Search completed" );
 }
 
-//short Engine::alphaBeta( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
-//{
-//
-//}
-
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+short Engine::alphaBeta( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
-    DEBUG( "Considering line: %s", line.c_str() );
-
-    // Make some working values so we are not "editing" method parameters
-    short alpha = alphaInput;
-    short beta = betaInput;
-
-    // If is win, return max
-    // If is loss, return lowest
-    // If draw, return 0
-    // otherwise iterate
-
-    // Simple win semantics
     short score = 0;
     if ( board.isTerminal( score ) )
     {
         // Why? Win (+1), Loss (-1) or Stalemate (0)
         if ( score == 0 )
         {
-            //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+            DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
             return 0;
         }
         else
@@ -950,7 +949,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score = -score;
             }
 
-            //DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
+            DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
 
             // Give it a critially large value, but not quite at lowest/highest...
             // so we have some wiggle room so we can make one winning line seem preferable to another
@@ -978,10 +977,79 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         return score;
     }
 
+    if ( maximising )
+    {
+        short rv = -30000;
+
+    }
+    else // minimising
+    {
+
+    }
+    return 0;
+}
+
+short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+{
+    DEBUG( "Considering line: %s", line.c_str() );
+
+    // Make some working values so we are not "editing" method parameters
+    short alpha = alphaInput;
+    short beta = betaInput;
+
+    // If is win, return max
+    // If is loss, return lowest
+    // If draw, return 0
+    // otherwise iterate
+
+    // Simple win semantics
+    short bestScore = 0;
+    if ( board.isTerminal( bestScore ) )
+    {
+        // Why? Win (+1), Loss (-1) or Stalemate (0)
+        if ( bestScore == 0 )
+        {
+            //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+            return 0;
+        }
+        else
+        {
+            if ( board.whiteToPlay() != asWhite )
+            {
+                bestScore = -bestScore;
+            }
+
+            //DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
+
+            // Give it a critially large value, but not quite at lowest/highest...
+            // so we have some wiggle room so we can make one winning line seem preferable to another
+            bestScore = bestScore < 0 ? std::numeric_limits<short>::lowest() + 1000 : std::numeric_limits<short>::max() - 1000;
+
+            // Adjusting the return with the depth means that it'll chase shorter lines to terminal positions rather
+            // than just settling for a forced mate being something it can commit to at any time
+            if ( bestScore < 0 )
+            {
+                bestScore -= depth;
+            }
+            else
+            {
+                bestScore += depth;
+            }
+
+            return bestScore;
+        }
+    }
+
+    if ( depth == 0 || stopThinking )
+    {
+        bestScore = board.scorePosition( asWhite );
+        DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", bestScore, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        return bestScore;
+    }
 
     if ( maximising )
     {
-        score = std::numeric_limits<short>::lowest();
+        bestScore = std::numeric_limits<short>::lowest();
 
         std::vector<Move> moves;
         moves.reserve( 256 );
@@ -997,26 +1065,39 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + (*it).toString() );
             board.unmakeMove( undo );
 
-            if ( evaluation > score )
+            if ( evaluation > bestScore )
             {
-                score = evaluation;
+                bestScore = evaluation;
             }
-            if ( evaluation > alpha )
+            if ( bestScore > beta )
             {
-                alpha = evaluation;
-            }
-            if ( beta <= alpha )
-            {
-                INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "CUOFF max" );
                 break;
             }
+            if ( bestScore > alpha )
+            {
+                alpha = bestScore;
+            }
+            //if ( evaluation > bestScore )
+            //{
+            //    bestScore = evaluation;
+            //}
+            //if ( evaluation > alpha )
+            //{
+            //    alpha = evaluation;
+            //}
+            //if ( beta <= alpha )
+            //{
+            //    INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+            //    break;
+            //}
         }
 
-        return score;
+        return bestScore;
     }
     else
     {
-        score = std::numeric_limits<short>::max();
+        bestScore = std::numeric_limits<short>::max();
 
         std::vector<Move> moves;
         moves.reserve( 256 );
@@ -1031,21 +1112,34 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             board.unmakeMove( undo );
 
-            if ( evaluation < score )
+            if ( evaluation < bestScore )
             {
-                score = evaluation;
+                bestScore = evaluation;
             }
-            if ( evaluation < alpha )
+            if ( bestScore < alpha )
             {
-                alpha = evaluation;
-            }
-            if ( beta <= alpha )
-            {
-                INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "CUTOFF min" );
                 break;
             }
+            if ( bestScore < beta )
+            {
+                beta = bestScore;
+            }
+            //if ( evaluation < bestScore )
+            //{
+            //    bestScore = evaluation;
+            //}
+            //if ( bestScore < beta )
+            //{
+            //    beta = bestScore;
+            //}
+            //if ( beta >= alpha )
+            //{
+            //    INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+            //    break;
+            //}
         }
 
-        return score;
+        return bestScore;
     }
 }
