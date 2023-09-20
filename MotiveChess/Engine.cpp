@@ -828,9 +828,35 @@ void Engine::Search::start( const Engine& engine )
             break;
         }
 
+        // Don't waste clock time on a forced move
+        if ( moves.size() == 1 )
+        {
+            DEBUG_S( engine, "Only one move available" );
+
+            bestMove = moves[ 0 ];
+            readyToMove = true;
+            break;
+        }
+
         // TODO sort moves
-        
-        // TODO go into minmax
+        //std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
+        //{
+            //if ( a.isCapture() != b.isCapture() ) // includes en passant
+            //{
+            //    return a.isCapture();
+            //}
+            //if ( a.isPromotion() != b.isPromotion() )
+            //{
+            //    return a.isPromotion();
+            //}
+            //if ( a.isCastling() != b.isCastling() )
+            //{
+            //    return a.isCastling();
+            //}
+        //    return false;
+        //} );
+
+
         short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
