@@ -1,6 +1,5 @@
 #include "Engine.h"
 
-#include <algorithm>
 #include <cstdarg>
 #include <fstream>
 #include <istream>
@@ -862,37 +861,6 @@ void Engine::Search::start( const Search* search, const Engine* engine )
             break;
         }
 
-        // TODO sort moves
-        std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
-        {
-            // Consider captures over promotions (both material gain) over check, over castling
-            if ( a.isCapture() != b.isCapture() ) // includes en passant
-            {
-                return a.isCapture();
-            }
-            if ( a.isPromotion() != b.isPromotion() )
-            {
-                return a.isPromotion();
-            }
-            if ( a.isPromotion() == b.isPromotion() )
-            {
-                if ( a.getPromotion() != b.getPromotion() )
-                {
-                    // Value the higher piece promotion
-                    return a.getPromotion() > b.getPromotion();
-                }
-            }
-            if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
-            {
-                return a.isCheckingMove();
-            }
-            if ( a.isCastling() != b.isCastling() )
-            {
-                return a.isCastling();
-            }
-            return false;
-        } );
-
         short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( search->board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
@@ -922,13 +890,13 @@ void Engine::Search::start( const Search* search, const Engine* engine )
             DEBUG_P( engine, "  score for %s is %d", ( *it ).toString().c_str(), score);
         }
 
-        depth--;
-
         // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
-        if ( depth <= 0 && readyToMove )
+        if ( depth == 0 && readyToMove )
         {
             break;
         }
+
+        depth--;
     }
 
     if ( !engine->quitting ) 
@@ -946,6 +914,11 @@ void Engine::Search::start( const Search* search, const Engine* engine )
 
     DEBUG_P( engine, "Search completed" );
 }
+
+//short Engine::alphaBeta( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+//{
+//
+//}
 
 short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
@@ -1001,9 +974,10 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     if ( depth == 0 || stopThinking )
     {
         score = board.scorePosition( asWhite );
-        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
         return score;
     }
+
 
     if ( maximising )
     {
@@ -1050,7 +1024,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
 
         int count = 0;
         Board::State undo = Board::State( board );
-        for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );

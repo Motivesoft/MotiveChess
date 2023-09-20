@@ -1,5 +1,6 @@
 #include "Board.h"
 
+#include <algorithm>
 #include <bitset>
 #include <iostream>
 #include <sstream>
@@ -78,6 +79,39 @@ void Board::getMoves( std::vector<Move>& moves )
 
         unmakeMove( state );
     }
+
+    // TODO sort moves
+#ifdef MOVE_SORTING
+    std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
+    {
+        // Consider captures over promotions (both material gain) over check, over castling
+        if ( a.isCapture() != b.isCapture() ) // includes en passant
+        {
+            return a.isCapture();
+        }
+        if ( a.isPromotion() != b.isPromotion() )
+        {
+            return a.isPromotion();
+        }
+        if ( a.isPromotion() == b.isPromotion() )
+        {
+            if ( a.getPromotion() != b.getPromotion() )
+            {
+                // Value the higher piece promotion
+                return a.getPromotion() > b.getPromotion();
+            }
+        }
+        if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+        {
+            return a.isCheckingMove();
+        }
+        if ( a.isCastling() != b.isCastling() )
+        {
+            return a.isCastling();
+        }
+        return false;
+    } );
+#endif
 }
 
 // TODO turn this into two methods - makeMove that creates and returns a state and calls applyMove, which does only that
