@@ -839,22 +839,22 @@ void Engine::Search::start( const Engine& engine )
         }
 
         // TODO sort moves
-        //std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
-        //{
-            //if ( a.isCapture() != b.isCapture() ) // includes en passant
-            //{
-            //    return a.isCapture();
-            //}
-            //if ( a.isPromotion() != b.isPromotion() )
-            //{
-            //    return a.isPromotion();
-            //}
-            //if ( a.isCastling() != b.isCastling() )
-            //{
-            //    return a.isCastling();
-            //}
-        //    return false;
-        //} );
+        std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
+        {
+            if ( a.isCapture() != b.isCapture() ) // includes en passant
+            {
+                return a.isCapture();
+            }
+            if ( a.isPromotion() != b.isPromotion() )
+            {
+                return a.isPromotion();
+            }
+            if ( a.isCastling() != b.isCastling() )
+            {
+                return a.isCastling();
+            }
+            return false;
+        } );
 
 
         short bestScore = std::numeric_limits<short>::lowest();

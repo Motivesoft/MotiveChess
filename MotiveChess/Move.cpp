@@ -6,10 +6,16 @@
 #include <string.h> // for strlen
 
 const unsigned long Move::PROMOTION_MASK = 0b00000000000000000111000000000000;
-const unsigned long Move::KNIGHT = 0b00000000000000000100000000000000;
-const unsigned long Move::BISHOP = 0b00000000000000000101000000000000;
-const unsigned long Move::ROOK = 0b00000000000000000110000000000000;
-const unsigned long Move::QUEEN = 0b00000000000000000111000000000000;
+const unsigned long Move::KNIGHT         = 0b00000000000000000100000000000000;
+const unsigned long Move::BISHOP         = 0b00000000000000000101000000000000;
+const unsigned long Move::ROOK           = 0b00000000000000000110000000000000;
+const unsigned long Move::QUEEN          = 0b00000000000000000111000000000000;
+
+const unsigned long Move::CAPTURE        = 0b00000000000000001000000000000000;
+const unsigned long Move::EP_CAPTURE     = 0b00000000000000011000000000000000;
+const unsigned long Move::CASTLING_MASK  = 0b00000000000001100000000000000000;
+const unsigned long Move::CASTLING_KSIDE = 0b00000000000000100000000000000000;
+const unsigned long Move::CASTLING_QSIDE = 0b00000000000001000000000000000000;
 
 const Move Move::nullMove( 0, 0 ); // all zeros, as suggested by UCI spec
 
