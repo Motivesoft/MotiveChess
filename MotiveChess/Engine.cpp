@@ -839,13 +839,15 @@ void Engine::Search::start( const Engine& engine )
         }
 
         // TODO sort moves
+        DEBUG_S( engine, "Pre-sort" );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
+        {
+            DEBUG_S( engine, ( *it ).toString().c_str() );
+        }
         std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
         {
+            // Consider captures over promotions (both material gain) over check, over castling
             if ( a.isCapture() != b.isCapture() ) // includes en passant
-            {
-                return a.isCapture();
-            }
-            if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
             {
                 return a.isCapture();
             }
@@ -853,13 +855,29 @@ void Engine::Search::start( const Engine& engine )
             {
                 return a.isPromotion();
             }
+            if ( a.isPromotion() == b.isPromotion() )
+            {
+                if ( a.getPromotion() != b.getPromotion() )
+                {
+                    // Value the higher piece promotion
+                    return a.getPromotion() > b.getPromotion();
+                }
+            }
+            if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+            {
+                return a.isCheckingMove();
+            }
             if ( a.isCastling() != b.isCastling() )
             {
                 return a.isCastling();
             }
             return false;
         } );
-
+        DEBUG_S( engine, "Post-sort" );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
+        {
+            DEBUG_S( engine, ( *it ).toString().c_str() );
+        }
 
         short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( board.get() );
@@ -874,7 +892,8 @@ void Engine::Search::start( const Engine& engine )
                                           std::numeric_limits<short>::lowest(),
                                           std::numeric_limits<short>::max(),
                                           false,
-                                          asWhite );
+                                          asWhite,
+                                          (*it).toString() );
             board->unmakeMove( undo );
 
             if ( score > bestScore )
@@ -914,8 +933,10 @@ void Engine::Search::start( const Engine& engine )
     DEBUG_S( engine, "Search completed" );
 }
 
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite ) const
+short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
+    DEBUG( "Considering line: %s", line.c_str() );
+
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
     short beta = betaInput;
@@ -985,7 +1006,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
 
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + (*it).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation > score )
@@ -1019,7 +1040,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation < score )

@@ -95,5 +95,13 @@ std::string Move::toString() const
             break;
     }
 
+    // TODO temporary
+    //if ( isCheckingMove() ) move << "+";
+    //if ( isCapture() ) move << "*";
+    //if ( isEnPassant() ) move << "*";
+    //if ( isCastling() ) move << "o";
+    //if ( isPromotion() ) move << ">";
+    //if ( isQuiescent() ) move << "q";
+
     return move.str();
 }
