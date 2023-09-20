@@ -466,6 +466,8 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         board->applyMove( *it );
     }
 
+    engine.stopImpl();
+
     engine.currentSearch = new Search( *board, goArgs );
     engine.currentSearch->run( &engine );
 }
@@ -703,15 +705,17 @@ void Engine::perftFile( const std::string& filename, bool divide ) const
 void Engine::stopImpl()
 {
     // TODO only do all this if we are currently thinking
-    stopThinking = true;
-
     if ( currentSearch != nullptr )
     {
+        stopThinking = true;
+
         currentSearch->wait();
 
         delete currentSearch;
         
         currentSearch = nullptr;
+
+        stopThinking = false;
     }
 }
 
@@ -994,10 +998,10 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         }
     }
 
-    if ( depth == 0 )
+    if ( depth == 0 || stopThinking )
     {
         score = board.scorePosition( asWhite );
-        //DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
         return score;
     }
 
