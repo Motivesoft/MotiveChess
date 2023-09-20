@@ -16,6 +16,11 @@
 #include "Perft.h"
 
 // Loggers from static methods
+#define DEBUG_P(engine,...) if( engine->debug ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
+#define INFO_P(engine,...) { engine->log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
+#define WARN_P(engine,...) { engine->log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
+#define ERROR_P(engine,...) { engine->log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
+
 #define DEBUG_S(engine,...) if( engine.debug ){ engine.log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { engine.log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
@@ -57,7 +62,8 @@ Engine::Engine() :
     broadcastStream( stdout ),
     logStream( stderr ),
     stagedPosition( Fen::startingPositionReference ),
-    stopThinking( false )
+    stopThinking( false ),
+    currentSearch( nullptr )
 {
 }
 
@@ -460,8 +466,8 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         board->applyMove( *it );
     }
 
-    Search search = Search( *board, goArgs );
-    search.start( engine );
+    engine.currentSearch = new Search( *board, goArgs );
+    engine.currentSearch->run( &engine );
 }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
@@ -696,9 +702,17 @@ void Engine::perftFile( const std::string& filename, bool divide ) const
 
 void Engine::stopImpl()
 {
-    // TODO make this a blocking action
     // TODO only do all this if we are currently thinking
     stopThinking = true;
+
+    if ( currentSearch != nullptr )
+    {
+        currentSearch->wait();
+
+        delete currentSearch;
+        
+        currentSearch = nullptr;
+    }
 }
 
 void Engine::resetGame( Engine& engine )
@@ -764,42 +778,48 @@ void Engine::broadcast( const char* format, ... ) const
 
 Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
     board( std::make_shared<Board>( board ) ),
-    goArgs( std::make_shared<GoArguments>( goArgs ) )
+    goArgs( std::make_shared<GoArguments>( goArgs ) ),
+    workerThread( nullptr )
 {
 }
 
-void Engine::Search::start( const Engine& engine )
+void Engine::Search::run( const Engine* engine )
+{
+    workerThread = new std::thread( &Engine::Search::start, this, engine );
+}
+
+void Engine::Search::start( const Search* search, const Engine* engine )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
-    DEBUG_S( engine, "Starting a search" );
+    DEBUG_P( engine, "Starting a search" );
 
-    unsigned int depth = goArgs->getDepth();
+    unsigned int depth = search->goArgs->getDepth();
 
     Move bestMove = Move::nullMove;
     Move ponderMove = Move::nullMove;
 
     // From whose perspective shall we consider this?
-    bool asWhite = board->whiteToPlay();
+    bool asWhite = search->board->whiteToPlay();
 
     // Keep going until we are told to quit, or to stop thinking once we have a candidate move
     bool readyToMove = false;
-    while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
+    while ( !engine->quitting && (!engine->stopThinking || !readyToMove) )
     {
         // TODO remove this when we're ready
-        DEBUG_S( engine, "Current position scores: %d", board->scorePosition( board->whiteToPlay() ) );
+        DEBUG_P( engine, "Current position scores: %d", search->board->scorePosition( search->board->whiteToPlay() ) );
 
         // Get candidate moves
         std::vector<Move> moves;
         moves.reserve( 256 );
          
-        board->getMoves( moves );
+        search->board->getMoves( moves );
 
         // Filter on searchMoves, if there are any
-        if ( !goArgs->getSearchMoves().empty() )
+        if ( !search->goArgs->getSearchMoves().empty() )
         {
             for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
             {
-                if ( std::find( goArgs->getSearchMoves().begin(), goArgs->getSearchMoves().end(), *it ) == goArgs->getSearchMoves().end() )
+                if ( std::find( search->goArgs->getSearchMoves().begin(), search->goArgs->getSearchMoves().end(), *it ) == search->goArgs->getSearchMoves().end() )
                 {
                     it = moves.erase( it );
                 }
@@ -811,7 +831,7 @@ void Engine::Search::start( const Engine& engine )
         
             if ( moves.empty() )
             {
-                ERROR_S( engine, "No matching searchmoves" );
+                ERROR_P( engine, "No matching searchmoves" );
 
                 // Stopping seems the appropriate action here
                 readyToMove = true;
@@ -821,7 +841,7 @@ void Engine::Search::start( const Engine& engine )
 
         if ( moves.empty() )
         {
-            ERROR_S( engine, "No moves available" );
+            ERROR_P( engine, "No moves available" );
 
             // Stopping seems the appropriate action here, too
             readyToMove = true;
@@ -831,7 +851,7 @@ void Engine::Search::start( const Engine& engine )
         // Don't waste clock time on a forced move
         if ( moves.size() == 1 )
         {
-            DEBUG_S( engine, "Only one move available" );
+            DEBUG_P( engine, "Only one move available" );
 
             bestMove = moves[ 0 ];
             readyToMove = true;
@@ -839,11 +859,6 @@ void Engine::Search::start( const Engine& engine )
         }
 
         // TODO sort moves
-        DEBUG_S( engine, "Pre-sort" );
-        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
-        {
-            DEBUG_S( engine, ( *it ).toString().c_str() );
-        }
         std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
         {
             // Consider captures over promotions (both material gain) over check, over castling
@@ -873,28 +888,23 @@ void Engine::Search::start( const Engine& engine )
             }
             return false;
         } );
-        DEBUG_S( engine, "Post-sort" );
-        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
-        {
-            DEBUG_S( engine, ( *it ).toString().c_str() );
-        }
 
         short bestScore = std::numeric_limits<short>::lowest();
-        Board::State undo( board.get() );
+        Board::State undo( search->board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
             // TODO delete this when we're happy
-            DEBUG_S( engine, "Considering %s", ( *it ).toString().c_str() );
+            DEBUG_P( engine, "Considering %s", ( *it ).toString().c_str() );
 
-            board->applyMove( *it );
-            short score = engine.minmax( *(board.get()),
-                                          depth,
-                                          std::numeric_limits<short>::lowest(),
-                                          std::numeric_limits<short>::max(),
-                                          false,
-                                          asWhite,
-                                          (*it).toString() );
-            board->unmakeMove( undo );
+            search->board->applyMove( *it );
+            short score = engine->minmax( *(search->board.get()),
+                                           depth,
+                                           std::numeric_limits<short>::lowest(),
+                                           std::numeric_limits<short>::max(),
+                                           false,
+                                           asWhite,
+                                           (*it).toString() );
+            search->board->unmakeMove( undo );
 
             if ( score > bestScore )
             {
@@ -905,7 +915,7 @@ void Engine::Search::start( const Engine& engine )
                 readyToMove = true;
             }
 
-            DEBUG_S( engine, "  score for %s is %d", ( *it ).toString().c_str(), score);
+            DEBUG_P( engine, "  score for %s is %d", ( *it ).toString().c_str(), score);
         }
 
         depth--;
@@ -917,20 +927,20 @@ void Engine::Search::start( const Engine& engine )
         }
     }
 
-    if ( !engine.quitting ) 
+    if ( !engine->quitting ) 
     {
         // TODO broadcast bestmove
         if ( ponderMove.isNullMove() )
         {
-            engine.bestmoveBroadcast( bestMove );
+            engine->bestmoveBroadcast( bestMove );
         }
         else
         {
-            engine.bestmoveBroadcast( bestMove, ponderMove );
+            engine->bestmoveBroadcast( bestMove, ponderMove );
         }
     }
 
-    DEBUG_S( engine, "Search completed" );
+    DEBUG_P( engine, "Search completed" );
 }
 
 short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
