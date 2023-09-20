@@ -22,6 +22,7 @@ const unsigned short Board::KING = 5;
 void Board::getMoves( std::vector<Move>& moves )
 {
     const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
 
     const unsigned long long whitePieces = bitboards[ WHITE + PAWN ] | bitboards[ WHITE + KNIGHT ] | bitboards[ WHITE + BISHOP ] | bitboards[ WHITE + ROOK ] | bitboards[ WHITE + QUEEN ] | bitboards[ WHITE + KING ];
     const unsigned long long blackPieces = bitboards[ BLACK + PAWN ] | bitboards[ BLACK + KNIGHT ] | bitboards[ BLACK + BISHOP ] | bitboards[ BLACK + ROOK ] | bitboards[ BLACK + QUEEN ] | bitboards[ BLACK + KING ];
@@ -59,6 +60,12 @@ void Board::getMoves( std::vector<Move>& moves )
     for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
     {
         applyMove( *it );
+
+        // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+        if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
+        {
+            (*it).setCheckingMove();
+        }
 
         if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
         {

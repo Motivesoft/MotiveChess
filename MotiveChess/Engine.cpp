@@ -845,6 +845,10 @@ void Engine::Search::start( const Engine& engine )
             {
                 return a.isCapture();
             }
+            if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+            {
+                return a.isCapture();
+            }
             if ( a.isPromotion() != b.isPromotion() )
             {
                 return a.isPromotion();

@@ -17,6 +17,10 @@ const unsigned long Move::CASTLING_MASK  = 0b00000000000001100000000000000000;
 const unsigned long Move::CASTLING_KSIDE = 0b00000000000000100000000000000000;
 const unsigned long Move::CASTLING_QSIDE = 0b00000000000001000000000000000000;
 
+const unsigned long Move::CHECKING_MOVE  = 0b00000000000010000000000000000000;
+
+const unsigned long Move::NON_QUIESCENT  = PROMOTION_MASK | CAPTURE | CASTLING_MASK | CHECKING_MOVE;
+
 const Move Move::nullMove( 0, 0 ); // all zeros, as suggested by UCI spec
 
 Move::Move( const char* moveString )

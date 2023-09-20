@@ -20,6 +20,10 @@ public:
     static const unsigned long CASTLING_QSIDE;
     static const unsigned long CASTLING_KSIDE;
 
+    static const unsigned long CHECKING_MOVE;
+
+    static const unsigned long NON_QUIESCENT;
+
     static const Move nullMove;
 
     Move( const char* moveString );
@@ -75,11 +79,28 @@ public:
         return (moveBits & EP_CAPTURE) == EP_CAPTURE;
     }
 
+    inline bool isCheckingMove() const
+    {
+        // Any kind of check, so no need for precise match
+        return moveBits & CHECKING_MOVE;
+    }
+
+    inline bool isQuiescent() const
+    {
+        return ( moveBits & NON_QUIESCENT ) == 0;
+    }
+
     inline bool isNullMove() const
     {
         return moveBits == 0;
     }
 
     std::string toString() const;
+
+    inline bool setCheckingMove()
+    {
+        // Any kind of capture, so no need for precise match
+        return moveBits |= CHECKING_MOVE;
+    }
 };
 
