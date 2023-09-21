@@ -51,6 +51,7 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 
     // Custom commands
     { "perft", &Engine::perftCommand },
+    { "wait", &Engine::waitCommand },
 };
 
 Engine::Engine() :
@@ -468,8 +469,12 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         board->applyMove( *it );
     }
 
+    // Interrupt any current search
+    engine.stopImpl();
+
     engine.currentSearch = new Search( *board, goArgs );
-    engine.currentSearch->run( &engine ); }
+    engine.currentSearch->run( &engine ); 
+}
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
@@ -560,6 +565,13 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
             engine.perftDepth( commandArguments.first, commandArguments.second, divide );
         }
     }
+}
+
+void Engine::waitCommand( Engine& engine, const std::string& arguments )
+{
+    INFO_S( engine, "Processing wait command" );
+
+    engine.waitImpl();
 }
 
 // Broadcast commands
@@ -707,16 +719,21 @@ void Engine::stopImpl()
     {
         stopThinking = true;
 
-        if ( currentSearch != nullptr )
-        {
-            currentSearch->wait();
-
-            delete currentSearch;
-
-            currentSearch = nullptr;
-        }
+        waitImpl();
 
         stopThinking = false;
+    }
+}
+
+void Engine::waitImpl()
+{
+    if ( currentSearch != nullptr )
+    {
+        currentSearch->wait();
+
+        delete currentSearch;
+
+        currentSearch = nullptr;
     }
 }
 
@@ -921,12 +938,9 @@ void Engine::Search::start( const Engine* engine, const Search* search )
             DEBUG_P( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
         }
 
-        // TODO this isn't how we want to use depth - but how do we reliably escape this loop
-        // one to consider with iterative deepening and quiescent searches
-//        depth--;
-
         // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
-        if ( depth <= 0 && readyToMove )
+        // one to consider with iterative deepening and quiescent searches
+        if ( readyToMove )
         {
             break;
         }
@@ -1002,10 +1016,10 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         }
     }
 
-    if ( depth == 0 )
+    if ( depth == 0 || stopThinking )
     {
         score = board.scorePosition( asWhite );
-        //DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
         //DEBUG( "1: %s scores %d", line.c_str(), score );
 
         return score;
@@ -1057,7 +1071,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
 
         int count = 1;
         Board::State undo = Board::State( board );
-        for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );

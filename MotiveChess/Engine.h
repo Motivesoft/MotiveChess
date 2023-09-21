@@ -99,6 +99,7 @@ private:
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 
     void stopImpl();
+    void waitImpl();
 
 public:
     Engine();
@@ -141,6 +142,7 @@ public:
 
     // Command handlers - custom commands
     static void perftCommand( Engine& engine, const std::string& arguments );
+    static void waitCommand( Engine& engine, const std::string& arguments );
 
     // Broadcast - standard UCI commands
     void idBroadcast( const std::string& name, const std::string& author ) const;
