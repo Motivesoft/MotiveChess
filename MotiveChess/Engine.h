@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 
 #include "Board.h"
 #include "GoArguments.h"
@@ -159,9 +160,27 @@ public:
         std::shared_ptr<Board> board;
         std::shared_ptr<const GoArguments> goArgs;
 
+        std::thread* workerThread;
+
     public:
         Search( Board& board, const GoArguments& goArgs );
 
-        void start( const Engine& engine );
+        static void start( const Engine* engine, const Search* search );
+
+        void run( const Engine* engine );
+
+        void wait()
+        {
+            if ( workerThread != nullptr )
+            {
+                workerThread->join();
+
+                delete workerThread;
+
+                workerThread = nullptr;
+            }
+        }
     };
+
+    Engine::Search* currentSearch;
 };

@@ -16,7 +16,13 @@
 #include "Move.h"
 #include "Perft.h"
 
-// Loggers from static methods
+// Loggers from static methods with pointers to Engine
+#define DEBUG_P(engine,...) if( engine->debug ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
+#define INFO_P(engine,...) { engine->log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
+#define WARN_P(engine,...) { engine->log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
+#define ERROR_P(engine,...) { engine->log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
+
+// Loggers from static methods with references to Engine
 #define DEBUG_S(engine,...) if( engine.debug ){ engine.log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { engine.log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
@@ -58,7 +64,8 @@ Engine::Engine() :
     broadcastStream( stdout ),
     logStream( stderr ),
     stagedPosition( Fen::startingPositionReference ),
-    stopThinking( false )
+    stopThinking( false ),
+    currentSearch( nullptr )
 {
 }
 
@@ -461,9 +468,8 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
         board->applyMove( *it );
     }
 
-    Search search = Search( *board, goArgs );
-    search.start( engine );
-}
+    engine.currentSearch = new Search( *board, goArgs );
+    engine.currentSearch->run( &engine ); }
 
 void Engine::stopCommand( Engine& engine, const std::string& arguments )
 {
@@ -697,9 +703,21 @@ void Engine::perftFile( const std::string& filename, bool divide ) const
 
 void Engine::stopImpl()
 {
-    // TODO make this a blocking action
-    // TODO only do all this if we are currently thinking
-    stopThinking = true;
+    if ( stopThinking == false )
+    {
+        stopThinking = true;
+
+        if ( currentSearch != nullptr )
+        {
+            currentSearch->wait();
+
+            delete currentSearch;
+
+            currentSearch = nullptr;
+        }
+
+        stopThinking = false;
+    }
 }
 
 void Engine::resetGame( Engine& engine )
@@ -775,46 +793,52 @@ void Engine::broadcast( const char* format, ... ) const
 
 Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
     board( std::make_shared<Board>( board ) ),
-    goArgs( std::make_shared<GoArguments>( goArgs ) )
+    goArgs( std::make_shared<GoArguments>( goArgs ) ),
+    workerThread( nullptr )
 {
 }
 
-void Engine::Search::start( const Engine& engine )
+void Engine::Search::run( const Engine* engine )
+{
+    workerThread = new std::thread( &Engine::Search::start, engine, this );
+}
+
+void Engine::Search::start( const Engine* engine, const Search* search )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
-    DEBUG_S( engine, "Starting a search" );
+    DEBUG_P( engine, "Starting a search" );
 
     // TODO delete this when we're happy
     auto startSearch = std::chrono::steady_clock::now();
 
-    unsigned int depth = goArgs->getDepth();
+    unsigned int depth = search->goArgs->getDepth();
 
     Move bestMove = Move::nullMove;
     Move ponderMove = Move::nullMove;
 
     // From whose perspective shall we consider this?
-    bool asWhite = board->whiteToPlay();
+    bool asWhite = search->board->whiteToPlay();
 
     // Keep going until we are told to quit, or to stop thinking once we have a candidate move
     bool readyToMove = false;
-    while ( !engine.quitting && (!engine.stopThinking || !readyToMove) )
+    while ( !engine->quitting && (!engine->stopThinking || !readyToMove) )
     {
         // TODO remove this when we're ready
-        DEBUG_S( engine, "Current position scores: %d", board->scorePosition( board->whiteToPlay() ) );
+        DEBUG_P( engine, "Current position scores: %d", search->board->scorePosition( search->board->whiteToPlay() ) );
 
         // Get candidate moves
         std::vector<Move> moves;
         moves.reserve( 256 );
          
-        board->getMoves( moves );
+        search->board->getMoves( moves );
 
         // Filter on searchMoves, if there are any
-        if ( !goArgs->getSearchMoves().empty() )
+        if ( !search->goArgs->getSearchMoves().empty() )
         {
             for ( std::vector<Move>::iterator moveIt = moves.begin(); moveIt != moves.end(); )
             {
                 bool found = false;
-                for ( std::vector<Move>::const_iterator searchIt = goArgs->getSearchMoves().cbegin(); searchIt != goArgs->getSearchMoves().cend(); searchIt++ )
+                for ( std::vector<Move>::const_iterator searchIt = search->goArgs->getSearchMoves().cbegin(); searchIt != search->goArgs->getSearchMoves().cend(); searchIt++ )
                 {
                     if ( ( *moveIt ).isEquivalent( *searchIt ) )
                     {
@@ -835,7 +859,7 @@ void Engine::Search::start( const Engine& engine )
         
             if ( moves.empty() )
             {
-                ERROR_S( engine, "No matching searchmoves" );
+                ERROR_P( engine, "No matching searchmoves" );
 
                 // Stopping seems the appropriate action here
                 readyToMove = true;
@@ -845,7 +869,7 @@ void Engine::Search::start( const Engine& engine )
 
         if ( moves.empty() )
         {
-            ERROR_S( engine, "No moves available" );
+            ERROR_P( engine, "No moves available" );
 
             // Stopping seems the appropriate action here, too
             readyToMove = true;
@@ -855,7 +879,7 @@ void Engine::Search::start( const Engine& engine )
         // Don't waste clock time on a forced move
         if ( moves.size() == 1 )
         {
-            DEBUG_S( engine, "Only one move available" );
+            DEBUG_P( engine, "Only one move available" );
 
             bestMove = moves[ 0 ];
             readyToMove = true;
@@ -865,22 +889,22 @@ void Engine::Search::start( const Engine& engine )
         // TODO sort moves
 
         short bestScore = std::numeric_limits<short>::lowest();
-        Board::State undo( board.get() );
+        Board::State undo( search->board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
             // TODO delete this when we're happy
-            DEBUG_S( engine, "Considering %s", ( *it ).toString().c_str() );
+            DEBUG_P( engine, "Considering %s", ( *it ).toString().c_str() );
             auto startTime = std::chrono::steady_clock::now();
 
-            board->applyMove( *it );
-            short score = engine.minmax( *(board.get()),
-                                          depth,
-                                          std::numeric_limits<short>::lowest(),
-                                          std::numeric_limits<short>::max(),
-                                          false,
-                                          asWhite,
-                                          ( *it ).toString() );
-            board->unmakeMove( undo );
+            search->board->applyMove( *it );
+            short score = engine->minmax( *(search->board.get()),
+                                           depth,
+                                           std::numeric_limits<short>::lowest(),
+                                           std::numeric_limits<short>::max(),
+                                           false,
+                                           asWhite,
+                                           ( *it ).toString() );
+            search->board->unmakeMove( undo );
 
             if ( score > bestScore )
             {
@@ -894,12 +918,12 @@ void Engine::Search::start( const Engine& engine )
             // TODO delete this when we're happy
             auto endTime = std::chrono::steady_clock::now();
             std::chrono::duration<double> diff = endTime - startTime;
-            DEBUG_S( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
+            DEBUG_P( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
         }
 
         // TODO this isn't how we want to use depth - but how do we reliably escape this loop
         // one to consider with iterative deepening and quiescent searches
-        depth--;
+//        depth--;
 
         // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
         if ( depth <= 0 && readyToMove )
@@ -908,23 +932,23 @@ void Engine::Search::start( const Engine& engine )
         }
     }
 
-    if ( !engine.quitting ) 
+    if ( !engine->quitting ) 
     {
         // TODO broadcast bestmove
         if ( ponderMove.isNullMove() )
         {
-            engine.bestmoveBroadcast( bestMove );
+            engine->bestmoveBroadcast( bestMove );
         }
         else
         {
-            engine.bestmoveBroadcast( bestMove, ponderMove );
+            engine->bestmoveBroadcast( bestMove, ponderMove );
         }
     }
 
     // TODO delete this when we're happy
     auto endSearch = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = endSearch - startSearch;
-    DEBUG_S( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
+    DEBUG_P( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 }
 
 short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
