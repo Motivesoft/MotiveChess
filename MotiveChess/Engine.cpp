@@ -581,14 +581,14 @@ void Engine::readyokBroadcast() const
 
 void Engine::bestmoveBroadcast( const Move& bestmove ) const
 {
-    INFO( "Broadcasting bestmove message" );
+    INFO( "Broadcasting bestmove message with %s", bestmove.toString().c_str() );
 
     broadcast( "bestmove %s", bestmove.toString().c_str() );
 }
 
 void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder ) const
 {
-    INFO( "Broadcasting bestmove message" );
+    INFO( "Broadcasting bestmove message with %s, ponder %s", bestmove.toString().c_str(), ponder.toString().c_str() );
 
     broadcast( "bestmove %s ponder %s", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
@@ -638,7 +638,7 @@ void Engine::infoBroadcast( const std::string& type, const char* format, ... ) c
 
 void Engine::optionBroadcast( const std::string& id, bool value ) const
 {
-    INFO( "Broadcasting bestmove message" );
+    INFO( "Broadcasting option message for %s", id.c_str() );
 
     broadcast( "option name %s type check default %s", id.c_str(), value ? "true" : "false" );
 }
@@ -727,6 +727,7 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
         fprintf( logStream, "%s : ", LevelNames[ level ] );
         vfprintf( logStream, format, arg );
         fprintf( logStream, "\n" );
+        fflush( logStream );
     }
 
     // Logging to console
@@ -844,7 +845,8 @@ void Engine::Search::start( const Engine& engine )
                                           std::numeric_limits<short>::lowest(),
                                           std::numeric_limits<short>::max(),
                                           false,
-                                          asWhite );
+                                          asWhite,
+                                          ( *it ).toString() );
             board->unmakeMove( undo );
 
             if ( score > bestScore )
@@ -884,7 +886,7 @@ void Engine::Search::start( const Engine& engine )
     DEBUG_S( engine, "Search completed" );
 }
 
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite ) const
+short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
@@ -903,6 +905,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         if ( score == 0 )
         {
             //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+            DEBUG( "3: %s scores %d", line.c_str(), score );
             return 0;
         }
         else
@@ -929,6 +932,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score += depth;
             }
 
+            DEBUG( "2: %s scores %d", line.c_str(), score );
             return score;
         }
     }
@@ -937,6 +941,8 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+        DEBUG( "1: %s scores %d", line.c_str(), score );
+
         return score;
     }
 
@@ -948,31 +954,32 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         moves.reserve( 256 );
         board.getMoves( moves );
 
-        int count = 0;
+        int count = 1;
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
             //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
 
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + (*it).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation > score )
             {
                 score = evaluation;
             }
-            if ( evaluation > alpha )
+            if ( score > alpha )
             {
-                alpha = evaluation;
+                alpha = score;
             }
-            if ( beta <= alpha )
+            if ( score >= beta )
             {
                 INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
 
+        DEBUG( "4: %s scores %d", line.c_str(), score);
         return score;
     }
     else
@@ -983,30 +990,31 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         moves.reserve( 256 );
         board.getMoves( moves );
 
-        int count = 0;
+        int count = 1;
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); it++, count++ )
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation < score )
             {
                 score = evaluation;
             }
-            if ( evaluation < alpha )
+            if ( score < beta )
             {
-                alpha = evaluation;
+                beta = score;
             }
-            if ( beta <= alpha )
+            if ( score <= alpha )
             {
                 INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
 
+        DEBUG( "5: %s scores %d", line.c_str(), score );
         return score;
     }
 }
