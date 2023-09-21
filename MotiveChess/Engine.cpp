@@ -887,10 +887,6 @@ void Engine::Search::start( const Engine& engine )
             break;
         }
     }
-    // TODO delete this when we're happy
-    auto endSearch = std::chrono::steady_clock::now();
-    std::chrono::duration<double> diff = endSearch - startSearch;
-    DEBUG_S( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 
     if ( !engine.quitting ) 
     {
@@ -905,7 +901,10 @@ void Engine::Search::start( const Engine& engine )
         }
     }
 
-    DEBUG_S( engine, "Search completed" );
+    // TODO delete this when we're happy
+    auto endSearch = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = endSearch - startSearch;
+    DEBUG_S( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 }
 
 short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
