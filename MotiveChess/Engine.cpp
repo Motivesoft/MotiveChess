@@ -802,6 +802,7 @@ void Engine::broadcast( const char* format, ... ) const
 
     vfprintf( broadcastStream, format, arg );
     fprintf( broadcastStream, "\n" );
+    fflush( broadcastStream );
 
     va_end( arg );
 }
