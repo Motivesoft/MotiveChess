@@ -23,6 +23,7 @@ const unsigned short Board::KING = 5;
 void Board::getMoves( std::vector<Move>& moves )
 {
     const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? WHITE : BLACK;
 
     const unsigned long long whitePieces = bitboards[ WHITE + PAWN ] | bitboards[ WHITE + KNIGHT ] | bitboards[ WHITE + BISHOP ] | bitboards[ WHITE + ROOK ] | bitboards[ WHITE + QUEEN ] | bitboards[ WHITE + KING ];
     const unsigned long long blackPieces = bitboards[ BLACK + PAWN ] | bitboards[ BLACK + KNIGHT ] | bitboards[ BLACK + BISHOP ] | bitboards[ BLACK + ROOK ] | bitboards[ BLACK + QUEEN ] | bitboards[ BLACK + KING ];
@@ -61,6 +62,12 @@ void Board::getMoves( std::vector<Move>& moves )
     {
         applyMove( *it );
 
+        // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+        //if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
+        //{
+        //    ( *it ).setCheckingMove();
+        //}
+
         if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
         {
             it = moves.erase( it );
@@ -80,9 +87,21 @@ void Board::getMoves( std::vector<Move>& moves )
         {
             return a.isCapture();
         }
+        //if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+        //{
+        //    return a.isCheckingMove();
+        //}
         if ( a.isPromotion() != b.isPromotion() )
         {
             return a.isPromotion();
+        }
+        else
+        {
+            // Will be 0 (no promotion) or a promotion piece (q,r,b,n) where we want q first
+            if ( a.getPromotion() != b.getPromotion() )
+            {
+                return a.getPromotion() > b.getPromotion();
+            }
         }
         if ( a.isCastling() != b.isCastling() )
         {

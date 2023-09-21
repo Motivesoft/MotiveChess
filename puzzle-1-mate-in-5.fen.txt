@@ -4,7 +4,7 @@ r1bqkbnr/2p5/p1np3p/1p2p3/4Pp2/1BP4P/PP1P1P1N/RNBQR1K1 w kq - 0 1
 # Not mate in 5, but good move to be seen at depth 5
 r3r3/pb3pkp/2p2qp1/3pR1nP/2pP4/7Q/PP3PP1/4R1K1 w - - 0 0
 
-            No move sorting
-1 D3G6      116.543s 
-2 D1H5       29.238s
-3 H5H6       49.869s
+            No move ordering     Plain move ordering
+1 D3G6      116.54s              6.21s
+2 D1H5       29.24s              4.65
+3 H5H6       49.87s              8.28s

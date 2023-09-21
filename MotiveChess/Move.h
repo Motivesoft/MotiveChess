@@ -8,6 +8,8 @@ private:
     unsigned long moveBits;
 
 public:
+    static const unsigned long FROM_MASK;
+    static const unsigned long TO_MASK;
     static const unsigned long PROMOTION_MASK;
     static const unsigned long KNIGHT;
     static const unsigned long BISHOP;
@@ -20,7 +22,10 @@ public:
     static const unsigned long CASTLING_QSIDE;
     static const unsigned long CASTLING_KSIDE;
 
+    static const unsigned long CHECKING_MOVE;
+
     static const unsigned long COMPARABLE_MASK;
+    static const unsigned long NON_QUIESCENT;
 
     static const Move nullMove;
 
@@ -92,6 +97,23 @@ public:
     inline bool isNullMove() const
     {
         return moveBits == 0;
+    }
+
+    inline bool isCheckingMove() const
+    {
+        // Any kind of check, so no need for precise match
+        return moveBits & CHECKING_MOVE;
+    }
+
+    inline bool isQuiescent() const
+    {
+        return ( moveBits & NON_QUIESCENT ) == 0;
+    }
+
+    inline bool setCheckingMove()
+    {
+        // Any kind of capture, so no need for precise match
+        return moveBits |= CHECKING_MOVE;
     }
 
     std::string toString() const;
