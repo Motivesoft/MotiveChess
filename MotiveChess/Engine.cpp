@@ -811,15 +811,25 @@ void Engine::Search::start( const Engine& engine )
         // Filter on searchMoves, if there are any
         if ( !goArgs->getSearchMoves().empty() )
         {
-            for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
+            for ( std::vector<Move>::iterator moveIt = moves.begin(); moveIt != moves.end(); )
             {
-                if ( std::find( goArgs->getSearchMoves().begin(), goArgs->getSearchMoves().end(), *it ) == goArgs->getSearchMoves().end() )
+                bool found = false;
+                for ( std::vector<Move>::const_iterator searchIt = goArgs->getSearchMoves().cbegin(); searchIt != goArgs->getSearchMoves().cend(); searchIt++ )
                 {
-                    it = moves.erase( it );
+                    if ( ( *moveIt ).isEquivalent( *searchIt ) )
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if ( !found )
+                {
+                    moveIt = moves.erase( moveIt );
                 }
                 else
                 {
-                    it++;
+                    moveIt++;
                 }
             }
         
