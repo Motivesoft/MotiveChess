@@ -905,7 +905,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         if ( score == 0 )
         {
             //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-            DEBUG( "3: %s scores %d", line.c_str(), score );
+            //DEBUG( "3: %s scores %d", line.c_str(), score );
             return 0;
         }
         else
@@ -932,7 +932,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score += depth;
             }
 
-            DEBUG( "2: %s scores %d", line.c_str(), score );
+            //DEBUG( "2: %s scores %d", line.c_str(), score );
             return score;
         }
     }
@@ -941,7 +941,7 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-        DEBUG( "1: %s scores %d", line.c_str(), score );
+        //DEBUG( "1: %s scores %d", line.c_str(), score );
 
         return score;
     }
@@ -974,12 +974,12 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( score >= beta )
             {
-                INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                //INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
 
-        DEBUG( "4: %s scores %d", line.c_str(), score);
+        //DEBUG( "4: %s scores %d", line.c_str(), score);
         return score;
     }
     else
@@ -1009,12 +1009,12 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
             if ( score <= alpha )
             {
-                INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                //INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
 
-        DEBUG( "5: %s scores %d", line.c_str(), score );
+        //DEBUG( "5: %s scores %d", line.c_str(), score );
         return score;
     }
 }
