@@ -1,6 +1,7 @@
 #include "Engine.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdarg>
 #include <fstream>
 #include <istream>
@@ -838,6 +839,7 @@ void Engine::Search::start( const Engine& engine )
         {
             // TODO delete this when we're happy
             DEBUG_S( engine, "Considering %s", ( *it ).toString().c_str() );
+            auto startTime = std::chrono::steady_clock::now();
 
             board->applyMove( *it );
             short score = engine.minmax( *(board.get()),
@@ -858,7 +860,9 @@ void Engine::Search::start( const Engine& engine )
                 readyToMove = true;
             }
 
-            DEBUG_S( engine, "  score for %s is %d", ( *it ).toString().c_str(), score);
+            auto endTime = std::chrono::steady_clock::now();
+            std::chrono::duration<double> diff = endTime - startTime;
+            DEBUG_S( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
         }
 
         depth--;
