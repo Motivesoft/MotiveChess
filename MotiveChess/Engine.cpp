@@ -725,7 +725,16 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
     // Logging to file
     if ( logFile.has_value() )
     {
-        fprintf( logStream, "%s : ", LevelNames[ level ] );
+        const auto current_time_point { std::chrono::system_clock::now() };
+        const auto current_time { std::chrono::system_clock::to_time_t( current_time_point ) };
+        const auto current_localtime { *std::localtime( &current_time ) };
+        const auto current_time_since_epoch { current_time_point.time_since_epoch() };
+        const auto current_milliseconds { duration_cast<std::chrono::milliseconds> ( current_time_since_epoch ).count() % 1000 };
+
+        std::ostringstream stream;
+        stream << std::put_time( &current_localtime, "%T" ) << "." << std::setw( 3 ) << std::setfill( '0' ) << current_milliseconds;
+
+        fprintf( logStream, "%s ; %s : ", stream.str().c_str(), LevelNames[level]);
         vfprintf( logStream, format, arg );
         fprintf( logStream, "\n" );
         fflush( logStream );
@@ -774,6 +783,9 @@ void Engine::Search::start( const Engine& engine )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
     DEBUG_S( engine, "Starting a search" );
+
+    // TODO delete this when we're happy
+    auto startSearch = std::chrono::steady_clock::now();
 
     unsigned int depth = goArgs->getDepth();
 
@@ -831,7 +843,7 @@ void Engine::Search::start( const Engine& engine )
         }
 
         // TODO sort moves
-        
+
         short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
@@ -873,6 +885,10 @@ void Engine::Search::start( const Engine& engine )
             break;
         }
     }
+    // TODO delete this when we're happy
+    auto endSearch = std::chrono::steady_clock::now();
+    std::chrono::duration<double> diff = endSearch - startSearch;
+    DEBUG_S( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 
     if ( !engine.quitting ) 
     {
