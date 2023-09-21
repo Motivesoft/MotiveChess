@@ -7,6 +7,8 @@
 
 #include "BitBoard.h"
 
+#define SET_CHECK_FLAG
+
 // Indices into bitboards
 const unsigned short Board::EMPTY = 0;
 const unsigned short Board::WHITE = 1;
@@ -23,7 +25,7 @@ const unsigned short Board::KING = 5;
 void Board::getMoves( std::vector<Move>& moves )
 {
     const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
-    const unsigned short opponentPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
 
     const unsigned long long whitePieces = bitboards[ WHITE + PAWN ] | bitboards[ WHITE + KNIGHT ] | bitboards[ WHITE + BISHOP ] | bitboards[ WHITE + ROOK ] | bitboards[ WHITE + QUEEN ] | bitboards[ WHITE + KING ];
     const unsigned long long blackPieces = bitboards[ BLACK + PAWN ] | bitboards[ BLACK + KNIGHT ] | bitboards[ BLACK + BISHOP ] | bitboards[ BLACK + ROOK ] | bitboards[ BLACK + QUEEN ] | bitboards[ BLACK + KING ];
@@ -62,11 +64,13 @@ void Board::getMoves( std::vector<Move>& moves )
     {
         applyMove( *it );
 
+#ifdef SET_CHECK_FLAG
         // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
-        //if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
-        //{
-        //    ( *it ).setCheckingMove();
-        //}
+        if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
+        {
+            ( *it ).setCheckingMove();
+        }
+#endif
 
         if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
         {
@@ -83,14 +87,16 @@ void Board::getMoves( std::vector<Move>& moves )
     // Sort the moves by contextual elements
     std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
     {
+#ifdef SET_CHECK_FLAG
+        if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+        {
+            return a.isCheckingMove();
+        }
+#endif
         if ( a.isCapture() != b.isCapture() ) // includes en passant
         {
             return a.isCapture();
         }
-        //if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
-        //{
-        //    return a.isCheckingMove();
-        //}
         if ( a.isPromotion() != b.isPromotion() )
         {
             return a.isPromotion();

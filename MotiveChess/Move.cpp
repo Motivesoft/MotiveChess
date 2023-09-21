@@ -98,5 +98,10 @@ std::string Move::toString() const
             break;
     }
 
+    if ( isCheckingMove() ) move << "+";
+    if ( isPromotion() ) move << ">";
+    if ( isCapture() ) move << "x";
+    if ( isCastling() ) move << "o";
+
     return move.str();
 }

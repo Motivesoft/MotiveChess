@@ -98,7 +98,15 @@ private:
 
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 
+    /// <summary>
+    /// Set a flag to ask the current search to stop, and then wait for that to happen
+    /// </summary>
     void stopImpl();
+
+    /// <summary>
+    /// Wait for the current search to stop naturally - which it might do because stop has previously asked it to,
+    /// or this might just be running as part of a test script
+    /// </summary>
     void waitImpl();
 
 public:
