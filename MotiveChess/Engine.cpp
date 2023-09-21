@@ -842,6 +842,16 @@ void Engine::Search::start( const Engine& engine )
             break;
         }
 
+        // Don't waste clock time on a forced move
+        if ( moves.size() == 1 )
+        {
+            DEBUG_S( engine, "Only one move available" );
+
+            bestMove = moves[ 0 ];
+            readyToMove = true;
+            break;
+        }
+
         // TODO sort moves
 
         short bestScore = std::numeric_limits<short>::lowest();
