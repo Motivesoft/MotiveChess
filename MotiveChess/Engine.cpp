@@ -877,6 +877,8 @@ void Engine::Search::start( const Engine& engine )
             DEBUG_S( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
         }
 
+        // TODO this isn't how we want to use depth - but how do we reliably escape this loop
+        // one to consider with iterative deepening and quiescent searches
         depth--;
 
         // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
