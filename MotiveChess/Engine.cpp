@@ -832,7 +832,6 @@ void Engine::Search::start( const Engine& engine )
 
         // TODO sort moves
         
-        // TODO go into minmax
         short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
@@ -860,6 +859,7 @@ void Engine::Search::start( const Engine& engine )
                 readyToMove = true;
             }
 
+            // TODO delete this when we're happy
             auto endTime = std::chrono::steady_clock::now();
             std::chrono::duration<double> diff = endTime - startTime;
             DEBUG_S( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
