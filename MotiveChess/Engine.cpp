@@ -17,19 +17,19 @@
 #include "Perft.h"
 
 // Loggers from static methods with pointers to Engine
-#define DEBUG_P(engine,...) if( engine->debug ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
+#define DEBUG_P(engine,...) if( engine->debug && !engine->silent ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_P(engine,...) { engine->log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN_P(engine,...) { engine->log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
 #define ERROR_P(engine,...) { engine->log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
 
 // Loggers from static methods with references to Engine
-#define DEBUG_S(engine,...) if( engine.debug ){ engine.log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
+#define DEBUG_S(engine,...) if( engine.debug && !engine.silent ){ engine.log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_S(engine,...) { engine.log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN_S(engine,...) { engine.log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
 #define ERROR_S(engine,...) { engine.log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
 
 // Loggers from non-static methods
-#define DEBUG(...) if( debug ){ log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
+#define DEBUG(...) if( debug && !silent ){ log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO(...) { log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
 #define WARN(...) { log( Engine::LogLevel::WARN, __VA_ARGS__ ); }
 #define ERROR(...) { log( Engine::LogLevel::ERROR, __VA_ARGS__ ); }
@@ -57,13 +57,17 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 Engine::Engine() :
     debug( false ),
     tee( false ),
+    logToConsole( true ),
+    logToFile( false ),
+    colorizedLogging( false ),
+    silent( false ),
     uciDebug( false ),
     registered( false ),
     quitting( false ),
     inputFile( std::nullopt ),
     logFile( std::nullopt ),
     broadcastStream( stdout ),
-    logStream( stderr ),
+    logStream( nullptr ),
     stagedPosition( Fen::startingPositionReference ),
     stopThinking( false ),
     currentSearch( nullptr )
@@ -76,10 +80,18 @@ void Engine::initialize()
     if ( logFile.has_value() )
     {
         logStream = std::fopen( logFile.value().c_str(), "w" );
-
-        if ( logStream == nullptr )
+        
+        if ( logStream != nullptr )
         {
-            logStream = stderr;
+            logToFile = true;
+        }
+        else
+        {
+            logToFile = false;
+
+            // Fall back to default logging
+            logToConsole = true;
+
             ERROR( "Failed (reason %d) to create logfile: %s", errno, logFile.value().c_str() );
         }
     }
@@ -757,37 +769,49 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
     va_list arg;
     va_start( arg, format );
 
-    // Logging to file
-    if ( logFile.has_value() )
+    if ( !silent )
     {
-        const auto current_time_point { std::chrono::system_clock::now() };
-        const auto current_time { std::chrono::system_clock::to_time_t( current_time_point ) };
-        const auto current_localtime { *std::localtime( &current_time ) };
-        const auto current_time_since_epoch { current_time_point.time_since_epoch() };
-        const auto current_milliseconds { duration_cast<std::chrono::milliseconds> ( current_time_since_epoch ).count() % 1000 };
+        // Logging to file - this won't be very quick, but hopefully we only use it when we need to
+        if ( logToFile )
+        {
+            const auto current_time_point { std::chrono::system_clock::now() };
+            const auto current_time { std::chrono::system_clock::to_time_t( current_time_point ) };
+            const auto current_localtime { *std::localtime( &current_time ) };
+            const auto current_time_since_epoch { current_time_point.time_since_epoch() };
+            const auto current_milliseconds { duration_cast<std::chrono::milliseconds> ( current_time_since_epoch ).count() % 1000 };
 
-        std::ostringstream stream;
-        stream << std::put_time( &current_localtime, "%T" ) << "." << std::setw( 3 ) << std::setfill( '0' ) << current_milliseconds;
+            std::ostringstream stream;
+            stream << std::put_time( &current_localtime, "%T" ) << "." << std::setw( 3 ) << std::setfill( '0' ) << current_milliseconds;
 
-        fprintf( logStream, "%s ; %s : ", stream.str().c_str(), LevelNames[level]);
-        vfprintf( logStream, format, arg );
-        fprintf( logStream, "\n" );
-        fflush( logStream );
-    }
+            fprintf( logStream, "%s : %s : ", stream.str().c_str(), LevelNames[level]);
+            vfprintf( logStream, format, arg );
+            fprintf( logStream, "\n" );
+            fflush( logStream );
+        }
 
-    // Logging to console
-    if ( !logFile.has_value() || tee )
-    {
-        fprintf( stderr, "%s%s : ", LevelColors[ level ], LevelNames[ level ] );
-        vfprintf( stderr, format, arg );
-        fprintf( stderr, "\033[0m\t\t" );
-        fprintf( stderr, "\n" );
+        // Logging to console
+        if ( logToConsole )
+        {
+            // Colorize the output if requested
+            if ( colorizedLogging )
+            {
+                fprintf( stderr, "%s%s : ", LevelColors[ level ], LevelNames[ level ] );
+                vfprintf( stderr, format, arg );
+                fprintf( stderr, "\033[0m\n" );
+            }
+            else
+            {
+                fprintf( stderr, "%s : ", LevelNames[level]);
+                vfprintf( stderr, format, arg );
+                fprintf( stderr, "\n" );
+            }
+        }
     }
 
     // Pass anything WARN or higher to UCI
-    // Pass anything higher than DEBUG to UCI if "DEBUG ON" has been called
-    if ( level > Engine::LogLevel::WARN ||
-         ( level > Engine::LogLevel::DEBUG && uciDebug ) )
+    // Pass anything higher than INFO to UCI if "DEBUG ON" has been called
+    if ( level >= Engine::LogLevel::WARN ||
+         ( level > Engine::LogLevel::INFO && uciDebug ) )
     {
         infoBroadcast( "string", format, arg );
     }
