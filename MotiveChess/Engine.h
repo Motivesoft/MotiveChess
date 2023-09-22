@@ -8,8 +8,10 @@
 #include <thread>
 
 #include "Board.h"
+#include "CopyProtection.h"
 #include "GoArguments.h"
 #include "Move.h"
+#include "Registration.h"
 
 class Engine
 {
@@ -35,12 +37,13 @@ private:
     FILE* logStream;
 
     bool uciDebug;
-    bool registered;
 
     volatile bool quitting;
     volatile bool stopThinking;
 
     std::string stagedPosition;
+
+    Registration registration;
 
     void perftDepth( const std::string& depthString, const std::string& fenString, bool divide ) const;
     void perftFen( const std::string& fenString, bool divide ) const;
@@ -179,8 +182,8 @@ public:
     void readyokBroadcast() const;
     void bestmoveBroadcast( const Move& bestmove ) const;
     void bestmoveBroadcast( const Move& bestmove, const Move& ponder ) const;
-    void copyprotectionBroadcast( const std::string& status ) const;
-    void registrationBroadcast( const std::string& status ) const;
+    void copyprotectionBroadcast( const CopyProtection::Status status ) const;
+    void registrationBroadcast( const Registration::Status status ) const;
     void infoBroadcast( const std::string& type, const char* format, va_list args ) const;
     void infoBroadcast( const std::string&, const char* format, ... ) const;
     void optionBroadcast( const std::string& id, bool value ) const;
