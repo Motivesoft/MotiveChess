@@ -7,6 +7,8 @@
 
 #include "BitBoard.h"
 
+#define SET_CHECK_FLAG
+
 // Indices into bitboards
 const unsigned short Board::EMPTY = 0;
 const unsigned short Board::WHITE = 1;
@@ -62,11 +64,13 @@ void Board::getMoves( std::vector<Move>& moves )
     {
         applyMove( *it );
 
+#ifdef SET_CHECK_FLAG
         // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
         if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
         {
-            (*it).setCheckingMove();
+            ( *it ).setCheckingMove();
         }
+#endif
 
         if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
         {
@@ -80,11 +84,15 @@ void Board::getMoves( std::vector<Move>& moves )
         unmakeMove( state );
     }
 
-    // TODO sort moves
-#ifdef MOVE_SORTING
+    // Sort the moves by contextual elements
     std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
     {
-        // Consider captures over promotions (both material gain) over check, over castling
+#ifdef SET_CHECK_FLAG
+        if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
+        {
+            return a.isCheckingMove();
+        }
+#endif
         if ( a.isCapture() != b.isCapture() ) // includes en passant
         {
             return a.isCapture();
@@ -93,17 +101,13 @@ void Board::getMoves( std::vector<Move>& moves )
         {
             return a.isPromotion();
         }
-        if ( a.isPromotion() == b.isPromotion() )
+        else
         {
+            // Will be 0 (no promotion) or a promotion piece (q,r,b,n) where we want q first
             if ( a.getPromotion() != b.getPromotion() )
             {
-                // Value the higher piece promotion
                 return a.getPromotion() > b.getPromotion();
             }
-        }
-        if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
-        {
-            return a.isCheckingMove();
         }
         if ( a.isCastling() != b.isCastling() )
         {
@@ -111,7 +115,6 @@ void Board::getMoves( std::vector<Move>& moves )
         }
         return false;
     } );
-#endif
 }
 
 // TODO turn this into two methods - makeMove that creates and returns a state and calls applyMove, which does only that
@@ -713,7 +716,9 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
         while ( scanForward( &destination, possibleMoves ) )
         {
-            possibleMoves ^= 1ull << destination;
+            unsigned long long destinationIndex = 1ull << destination;
+
+            possibleMoves ^= destinationIndex;
 
             if ( rankFrom == promotionRankFrom )
             {
@@ -722,13 +727,9 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 moves.emplace_back( index, destination, Move::ROOK | Move::CAPTURE );
                 moves.emplace_back( index, destination, Move::QUEEN | Move::CAPTURE );
             }
-            else if ( ( 1ull << destination ) && enPassantIndex )
-            {
-                moves.emplace_back( index, destination, Move::EP_CAPTURE );
-            }
             else
             {
-                moves.emplace_back( index, destination, Move::CAPTURE );
+                moves.emplace_back( index, destination, Move::CAPTURE | (destinationIndex == enPassantIndex ? Move::EP_CAPTURE : 0) );
             }
         }
     }
@@ -754,7 +755,7 @@ void Board::getKnightMoves( std::vector<Move>& moves, const unsigned short& piec
         {
             unsigned long long destinationIndex = 1ull << destination;
 
-            possibleMoves ^= destinationIndex;
+            possibleMoves ^= 1ull << destination;
 
             moves.emplace_back( index, destination, (destinationIndex & attackPieces) ? Move::CAPTURE : 0 );
         }
@@ -838,7 +839,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
         {
             unsigned long long destinationIndex = 1ull << destination;
 
-            possibleMoves ^= destinationIndex;
+            possibleMoves ^= 1ull << destination;
 
             moves.emplace_back( index, destination, ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 );
         }
@@ -1015,7 +1016,7 @@ void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& 
     {
         unsigned long long destinationIndex = 1ull << destination;
 
-        possibleMoves ^= destinationIndex;
+        possibleMoves ^= 1ull << destination;
 
         moves.emplace_back( index, destination, ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 );
     }
@@ -1048,11 +1049,10 @@ short Board::scorePosition( bool scoreForWhite ) const
 // TODO check that score is correctly returning the value (-1,0,+1)
 bool Board::isTerminal( short& score )
 {
-    // If we can take the opponent's king, this is a win for us
     unsigned long long king = bitboards[ ( whiteToMove ? BLACK : WHITE ) + KING ];
     if ( isAttacked( king, !whiteToMove ) )
     {
-        fprintf( stderr, "Think this is a win for %s\n", ( whiteToMove ? "WHITE" : "BLACK" ) );
+        //fprintf( stderr, "Think this is a win for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
         score = +1; // We can take the opponent's king and therefore, win
         return true;
     }
@@ -1066,13 +1066,13 @@ bool Board::isTerminal( short& score )
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
         if ( isAttacked( king, whiteToMove ) )
         {
-            //fprintf( stderr, "Think this is a loss for %s\n", ( whiteToMove ? "WHITE" : "BLACK" ) );
+            //fprintf( stderr, "Think this is a loss for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
             score = -1; // activeColor loses
             return true;
         }
         else
         {
-            //fprintf( stderr, "Think this is stalemate\n" );
+            //fprintf( stderr, "Think this is stalemate" );
             score = 0; // stalemate
             return true;
         }

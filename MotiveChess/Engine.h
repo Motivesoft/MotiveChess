@@ -96,10 +96,18 @@ private:
     void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
-    short alphaBeta( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
     short minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 
+    /// <summary>
+    /// Set a flag to ask the current search to stop, and then wait for that to happen
+    /// </summary>
     void stopImpl();
+
+    /// <summary>
+    /// Wait for the current search to stop naturally - which it might do because stop has previously asked it to,
+    /// or this might just be running as part of a test script
+    /// </summary>
+    void waitImpl();
 
 public:
     Engine();
@@ -142,6 +150,7 @@ public:
 
     // Command handlers - custom commands
     static void perftCommand( Engine& engine, const std::string& arguments );
+    static void waitCommand( Engine& engine, const std::string& arguments );
 
     // Broadcast - standard UCI commands
     void idBroadcast( const std::string& name, const std::string& author ) const;
@@ -166,9 +175,10 @@ public:
     public:
         Search( Board& board, const GoArguments& goArgs );
 
-        static void start( const Search* search, const Engine* engine );
+        static void start( const Engine* engine, const Search* search );
 
         void run( const Engine* engine );
+
         void wait()
         {
             if ( workerThread != nullptr )

@@ -8,6 +8,8 @@ private:
     unsigned long moveBits;
 
 public:
+    static const unsigned long FROM_MASK;
+    static const unsigned long TO_MASK;
     static const unsigned long PROMOTION_MASK;
     static const unsigned long KNIGHT;
     static const unsigned long BISHOP;
@@ -22,6 +24,7 @@ public:
 
     static const unsigned long CHECKING_MOVE;
 
+    static const unsigned long COMPARABLE_MASK;
     static const unsigned long NON_QUIESCENT;
 
     static const Move nullMove;
@@ -38,6 +41,18 @@ public:
     bool operator!=( const Move& other ) const
     {
         return moveBits != other.moveBits;
+    }
+
+    /// <summary>
+    /// Compares the significant portions of two Move objects.
+    /// This means it tests from, to and promotion - but nothing else.
+    /// This allows generated moves to be compared with moves provided by text strings
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    bool isEquivalent( const Move& other )
+    {
+        return ( moveBits & COMPARABLE_MASK ) == ( other.moveBits & COMPARABLE_MASK );
     }
 
     inline unsigned short getFrom() const
@@ -76,7 +91,12 @@ public:
     inline bool isEnPassant() const
     {
         // Needs to be precise match
-        return (moveBits & EP_CAPTURE) == EP_CAPTURE;
+        return ( moveBits & EP_CAPTURE ) == EP_CAPTURE;
+    }
+
+    inline bool isNullMove() const
+    {
+        return moveBits == 0;
     }
 
     inline bool isCheckingMove() const
@@ -90,17 +110,12 @@ public:
         return ( moveBits & NON_QUIESCENT ) == 0;
     }
 
-    inline bool isNullMove() const
-    {
-        return moveBits == 0;
-    }
-
-    std::string toString() const;
-
     inline bool setCheckingMove()
     {
         // Any kind of capture, so no need for precise match
         return moveBits |= CHECKING_MOVE;
     }
+
+    std::string toString() const;
 };
 
