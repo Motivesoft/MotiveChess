@@ -25,6 +25,9 @@ private:
 
     bool debug;
     bool tee;
+    bool logToConsole;
+    bool logToFile;
+    bool colorizedLogging;
     std::optional<std::string> inputFile;
     std::optional<std::string> logFile;
     FILE* broadcastStream;
@@ -120,6 +123,12 @@ public:
     void setTee()
     {
         tee = true;
+        logToConsole = true;
+    }
+
+    void setColorizedLogging()
+    {
+        colorizedLogging = true;
     }
 
     void setInputFile( const std::string filename )
@@ -130,6 +139,12 @@ public:
     void setLogFile( const std::string filename )
     {
         logFile = std::optional<std::string>( filename );
+        logToFile = true;
+
+        if ( !tee )
+        {
+            logToConsole = false;
+        }
     }
 
     void initialize();

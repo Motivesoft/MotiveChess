@@ -57,13 +57,16 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 Engine::Engine() :
     debug( false ),
     tee( false ),
+    logToConsole( true ),
+    logToFile( false ),
+    colorizedLogging( false ),
     uciDebug( false ),
     registered( false ),
     quitting( false ),
     inputFile( std::nullopt ),
     logFile( std::nullopt ),
     broadcastStream( stdout ),
-    logStream( stderr ),
+    logStream( nullptr ),
     stagedPosition( Fen::startingPositionReference ),
     stopThinking( false ),
     currentSearch( nullptr )
@@ -76,10 +79,18 @@ void Engine::initialize()
     if ( logFile.has_value() )
     {
         logStream = std::fopen( logFile.value().c_str(), "w" );
-
-        if ( logStream == nullptr )
+        
+        if ( logStream != nullptr )
         {
-            logStream = stderr;
+            logToFile = true;
+        }
+        else
+        {
+            logToFile = false;
+
+            // Fall back to default logging
+            logToConsole = true;
+
             ERROR( "Failed (reason %d) to create logfile: %s", errno, logFile.value().c_str() );
         }
     }
@@ -757,8 +768,8 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
     va_list arg;
     va_start( arg, format );
 
-    // Logging to file
-    if ( logFile.has_value() )
+    // Logging to file - this won't be very quick, but hopefully we only use it when we need to
+    if ( logToFile )
     {
         const auto current_time_point { std::chrono::system_clock::now() };
         const auto current_time { std::chrono::system_clock::to_time_t( current_time_point ) };
@@ -769,19 +780,27 @@ void Engine::log( Engine::LogLevel level, const char* format, ... ) const
         std::ostringstream stream;
         stream << std::put_time( &current_localtime, "%T" ) << "." << std::setw( 3 ) << std::setfill( '0' ) << current_milliseconds;
 
-        fprintf( logStream, "%s ; %s : ", stream.str().c_str(), LevelNames[level]);
+        fprintf( logStream, "%s : %s : ", stream.str().c_str(), LevelNames[level]);
         vfprintf( logStream, format, arg );
         fprintf( logStream, "\n" );
         fflush( logStream );
     }
 
     // Logging to console
-    if ( !logFile.has_value() || tee )
+    if ( logToConsole )
     {
-        fprintf( stderr, "%s%s : ", LevelColors[ level ], LevelNames[ level ] );
-        vfprintf( stderr, format, arg );
-        fprintf( stderr, "\033[0m\t\t" );
-        fprintf( stderr, "\n" );
+        if ( colorizedLogging )
+        {
+            fprintf( stderr, "%s%s : ", LevelColors[ level ], LevelNames[ level ] );
+            vfprintf( stderr, format, arg );
+            fprintf( stderr, "\033[0m\n" );
+        }
+        else
+        {
+            fprintf( stderr, "%s : ", LevelNames[level]);
+            vfprintf( stderr, format, arg );
+            fprintf( stderr, "\n" );
+        }
     }
 
     // Pass anything WARN or higher to UCI
