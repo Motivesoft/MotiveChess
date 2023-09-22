@@ -32,6 +32,7 @@ int main( int argc, char** argv )
 		std::cout << "  " << switchPrefix << "logfile [filename] : log to [filename], rather than to stderr (console)" << std::endl;
 		std::cout << "  " << switchPrefix << "tee                : when used with '" << switchPrefix << "logfile', log to file and stderr (console)" << std::endl;
 		std::cout << "  " << switchPrefix << "colorized          : use colors for stderr (console) logging" << std::endl;
+		std::cout << "  " << switchPrefix << "silent             : disable all logging" << std::endl;
 		std::cout << "  " << switchPrefix << "input [filename]   : read input from [filename], rather than the console" << std::endl;
 		std::cout << "  " << switchPrefix << "help               : this information" << std::endl;
 	}
@@ -64,6 +65,10 @@ bool processCommandLine( Engine& engine, const std::string& switchPrefix, const 
 			else if ( flag == "colorized" )
 			{
 				engine.setColorizedLogging();
+			}
+			else if ( flag == "silent" )
+			{
+				engine.setSilent();
 			}
 			else if ( flag == "input" )
 			{

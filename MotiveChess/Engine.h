@@ -28,6 +28,7 @@ private:
     bool logToConsole;
     bool logToFile;
     bool colorizedLogging;
+    bool silent;
     std::optional<std::string> inputFile;
     std::optional<std::string> logFile;
     FILE* broadcastStream;
@@ -129,6 +130,11 @@ public:
     void setColorizedLogging()
     {
         colorizedLogging = true;
+    }
+
+    void setSilent()
+    {
+        silent = true;
     }
 
     void setInputFile( const std::string filename )
