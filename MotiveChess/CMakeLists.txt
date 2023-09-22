@@ -12,6 +12,7 @@ endif()
 project ("MotiveChess" VERSION 1.0.0.1)
 
 configure_file(Version.h.in Version.h)
+
 # Add source to this project's executable.
 add_executable (MotiveChess "MotiveChess.cpp" "MotiveChess.h" "Engine.cpp" "Engine.h" "Fen.cpp" "Fen.h" "Perft.cpp" "Perft.h" "Board.cpp" "Board.h" "Move.cpp" "Move.h" "BitBoard.cpp" "BitBoard.h" "GoArguments.cpp" "GoArguments.h" "Registration.h" "CopyProtection.h")
 
