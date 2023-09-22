@@ -1,0 +1,9 @@
+# Mate in 5
+2r2r1k/1b2qpn1/p3pNpp/1p2p3/2nP3N/3Q4/1PB2PPP/1R1R2K1 w - - 0 1
+r1bqkbnr/2p5/p1np3p/1p2p3/4Pp2/1BP4P/PP1P1P1N/RNBQR1K1 w kq - 0 1
+
+# Mate in 6
+3R4/k6p/p7/2KpB3/4b1P1/7r/P1p5/8 w - - 0 1
+
+# Not mate, but to find a good move to be seen at depth 5
+r3r3/pb3pkp/2p2qp1/3pR1nP/2pP4/7Q/PP3PP1/4R1K1 w - - 0 0
