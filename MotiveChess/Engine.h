@@ -65,6 +65,10 @@ private:
         std::pair<std::string, std::string> result;
 
         size_t space = trimmed.find( " " );
+        if ( space == std::string::npos )
+        {
+            space = trimmed.find( "\t" );
+        }
 
         if ( space == std::string::npos )
         {
