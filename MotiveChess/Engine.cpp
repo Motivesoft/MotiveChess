@@ -15,6 +15,7 @@
 #include "GoArguments.h"
 #include "Move.h"
 #include "Perft.h"
+#include "Version.h"
 
 // Loggers from static methods with pointers to Engine
 #define DEBUG_P(engine,...) if( engine->debug && !engine->silent ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
@@ -157,7 +158,9 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
 
     // TODO any further setup?
 
-    engine.idBroadcast( "MotiveChess", "Motivesoft" );
+    std::stringstream name;
+    name << "MotiveChess " << MotiveChess_VERSION;
+    engine.idBroadcast( name.str(), "Motivesoft" );
     
     // TODO do this properly
     engine.copyprotectionBroadcast( CopyProtection::Status::CHECKING );
@@ -452,8 +455,6 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     }
 
     GoArguments goArgs = builder.build();
-    // TODO Board = board(fen) and then make moves from position statement
-    // TODO pass board and goargs to search
 
     details = firstWord( engine.stagedPosition );
 
@@ -486,7 +487,9 @@ void Engine::goCommand( Engine& engine, const std::string& arguments )
     }
     else
     {
-        ERROR_S( engine, "Unexpected word in position: %s", details.first.c_str() );
+        ERROR_S( engine, "Unexpected word in position: %s. Using starting position", details.first.c_str() );
+
+        fenString = Fen::startingPosition;
     }
 
     // movesString is either empty or "moves xxxx"
@@ -783,7 +786,6 @@ void Engine::resetGame( Engine& engine )
 {
     // It is possible we will not get a ucinewgame, so encode the same game reset logic in 'position'
 
-    // TODO call some silent version of stop, not the specific UCI command?
     engine.stopImpl();
 
     engine.stagedPosition = Fen::startingPositionReference;
