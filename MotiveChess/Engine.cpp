@@ -62,7 +62,6 @@ Engine::Engine() :
     colorizedLogging( false ),
     silent( false ),
     uciDebug( false ),
-    registered( false ),
     quitting( false ),
     inputFile( std::nullopt ),
     logFile( std::nullopt ),
@@ -161,8 +160,8 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
     engine.idBroadcast( "MotiveChess", "Motivesoft" );
     
     // TODO do this properly
-    engine.copyprotectionBroadcast( "checking" );
-    engine.copyprotectionBroadcast( "ok" );
+    engine.copyprotectionBroadcast( CopyProtection::Status::CHECKING );
+    engine.copyprotectionBroadcast( CopyProtection::Status::OK );
 
     // TODO if we ever have more than one option, handle them in a better way than this
     engine.optionBroadcast( "Trace", engine.debug );
@@ -170,8 +169,8 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
     engine.uciokBroadcast();
 
     // TODO do this more properly
-    engine.registrationBroadcast( "checking" );
-    engine.registrationBroadcast( "ok" );
+    engine.registrationBroadcast( Registration::Status::CHECKING );
+    engine.registrationBroadcast( Registration::Status::OK );
 }
 
 void Engine::debugCommand( Engine& engine, const std::string& arguments )
@@ -256,15 +255,46 @@ void Engine::registerCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing register command" );
 
+    engine.registrationBroadcast( Registration::Status::CHECKING );
+
     std::pair<std::string, std::string> details = firstWord( arguments );
     if ( details.first == "later" )
     {
-        engine.registered = false;
+        engine.registration.registerLater();
+        engine.registrationBroadcast( engine.registration.isRegistered() ? Registration::Status::OK : Registration::Status::ERROR );
     }
     else if ( details.first == "name" )
     {
-        // TODO do this properly
-        engine.registered = true;
+        bool complete = false;
+        std::stringstream name;
+        std::stringstream code;
+        while( !details.first.empty() )
+        {
+            details = firstWord( details.second );
+            if ( details.first == "code" )
+            {
+                complete = true;
+                code << details.second;
+                break;
+            }
+            
+            if ( !name.str().empty() )
+            {
+                name << " ";
+            }
+            name << details.first;
+        }
+
+        if ( complete )
+        {
+            DEBUG_S(engine, "TEST: [%s] [%s]", name.str().c_str(), code.str().c_str())
+            engine.registration.registerNameCode( name.str(), code.str() );
+            engine.registrationBroadcast( engine.registration.isRegistered() ? Registration::Status::OK : Registration::Status::ERROR );
+        }
+        else
+        {
+            ERROR_S( engine, "Malformed registration command. Expecting name and code" );
+        }
     }
     else if( details.first.empty() )
     {
@@ -624,18 +654,18 @@ void Engine::bestmoveBroadcast( const Move& bestmove, const Move& ponder ) const
     broadcast( "bestmove %s ponder %s", bestmove.toString().c_str(), ponder.toString().c_str() );
 }
 
-void Engine::copyprotectionBroadcast( const std::string& status ) const
+void Engine::copyprotectionBroadcast( const CopyProtection::Status status ) const
 {
     INFO( "Sending copyprotection status" );
 
-    broadcast( "copyprotection %s", status.c_str() );
+    broadcast( "copyprotection %s", CopyProtection::toString( status ) );
 }
 
-void Engine::registrationBroadcast( const std::string& status ) const
+void Engine::registrationBroadcast( const Registration::Status status ) const
 {
     INFO( "Sending registration status" );
 
-    broadcast( "registration %s", status.c_str() );
+    broadcast( "registration %s", Registration::toString( status ) );
 }
 
 void Engine::infoBroadcast( const std::string& type, const char* format, va_list arg ) const
