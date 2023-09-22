@@ -3,4 +3,3 @@
 #define MotiveChess_VERSION_MINOR @MotiveChess_VERSION_MINOR@
 #define MotiveChess_VERSION_PATCH @MotiveChess_VERSION_PATCH@
 #define MotiveChess_VERSION_TWEAK @MotiveChess_VERSION_TWEAK@
-#define MotiveChess_VERSION "@MotiveChess_VERSION@"

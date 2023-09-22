@@ -159,7 +159,7 @@ void Engine::uciCommand( Engine& engine, const std::string& arguments )
     // TODO any further setup?
 
     std::stringstream name;
-    name << "MotiveChess " << MotiveChess_VERSION;
+    name << "MotiveChess " << MotiveChess_VERSION_MAJOR << "." << MotiveChess_VERSION_MINOR << "." << MotiveChess_VERSION_PATCH;
     engine.idBroadcast( name.str(), "Motivesoft" );
     
     // TODO do this properly

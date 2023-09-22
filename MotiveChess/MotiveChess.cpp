@@ -4,7 +4,7 @@
 
 int main( int argc, char** argv )
 {
-	printf( "MotiveChess %d.%d.%d\n", MotiveChess_VERSION_MAJOR, MotiveChess_VERSION_MINOR, MotiveChess_VERSION_PATCH );
+	printf( "MotiveChess %d.%d.%d.%d\n", MotiveChess_VERSION_MAJOR, MotiveChess_VERSION_MINOR, MotiveChess_VERSION_PATCH, MotiveChess_VERSION_TWEAK );
 
 	std::vector<std::string> args;
 	for ( unsigned short loop = 1; loop < argc; loop++ )
