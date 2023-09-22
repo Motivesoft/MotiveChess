@@ -1,0 +1,4 @@
+uci
+perft file perft.epd
+perft 6
+quit
