@@ -23,10 +23,11 @@ public:
 
     bool registerLater()
     {
-        registered = false;
+        // Indicating that we have allowed the request to register later, but this is not a permanent
+        // registration
+        registered = true;
 
-        // Return true to allow unregistered operation
-        return true;
+        return registered;
     }
 
     bool registerNameCode( const std::string& name, const std::string& code )
