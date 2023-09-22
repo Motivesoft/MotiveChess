@@ -88,11 +88,11 @@ private:
     static std::string trim( const std::string& string )
     {
         std::string trimmed = string;
-        while ( trimmed.starts_with( " " ) )
+        while ( trimmed.starts_with( " " ) || trimmed.starts_with( "\t" ) )
         {
             trimmed = trimmed.substr( 1 );
         }
-        while ( trimmed.ends_with( " " ) )
+        while ( trimmed.ends_with( " " ) || trimmed.starts_with( "\t" ) )
         {
             trimmed = trimmed.substr( 0, string.length() - 1 );
         }
