@@ -1,11 +1,10 @@
-﻿// MotiveChess.cpp : Defines the entry point for the application.
-//
+﻿#include "MotiveChess.h"
 
-#include "MotiveChess.h"
+#include "Version.h"
 
 int main( int argc, char** argv )
 {
-	std::cout << "MotiveChess 0.1" << std::endl;
+	printf( "MotiveChess %d.%d.%d.%d\n", MotiveChess_VERSION_MAJOR, MotiveChess_VERSION_MINOR, MotiveChess_VERSION_PATCH, MotiveChess_VERSION_TWEAK );
 
 	std::vector<std::string> args;
 	for ( unsigned short loop = 1; loop < argc; loop++ )
