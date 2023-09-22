@@ -1,4 +1,4 @@
 uci
-perft file motive-chess.epd
+perft file perft.epd
 perft 6
 quit
