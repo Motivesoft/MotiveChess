@@ -889,6 +889,8 @@ void Engine::Search::start( const Engine* engine, const Search* search )
 
     unsigned int depth = search->goArgs->getDepth();
 
+    short bestScore = std::numeric_limits<short>::lowest();
+
     Move bestMove = Move::nullMove;
     Move ponderMove = Move::nullMove;
 
@@ -965,7 +967,6 @@ void Engine::Search::start( const Engine* engine, const Search* search )
 
         // TODO sort moves
 
-        short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( search->board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
@@ -1008,7 +1009,8 @@ void Engine::Search::start( const Engine* engine, const Search* search )
 
     if ( !engine->quitting ) 
     {
-        // TODO broadcast bestmove
+        DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString(), bestScore );
+
         if ( ponderMove.isNullMove() )
         {
             engine->bestmoveBroadcast( bestMove );
@@ -1051,12 +1053,16 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         }
         else
         {
+            DEBUG( "isTerminal returns %d (color corrected to %d) for %s", score, line.c_str() );
             if ( board.whiteToPlay() != asWhite )
             {
                 score = -score;
+                DEBUG( "isTerminal result corrected to %d to be relative to current player", score );
             }
 
-            //DEBUG( "Score %d (terminal) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black");
+#ifdef SHOW_LINES
+            DEBUG( "6: Score %d (terminal) as %s with %s to play from %s", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black", line.c_str());
+#endif
 
             // Give it a critially large value, but not quite at lowest/highest...
             // so we have some wiggle room so we can make one winning line seem preferable to another
