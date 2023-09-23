@@ -1088,7 +1088,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         }
     }
 
-    if ( stopThinking )
+    if ( depth == 0 || stopThinking )
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
