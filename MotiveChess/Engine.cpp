@@ -17,6 +17,8 @@
 #include "Perft.h"
 #include "Version.h"
 
+#define SHOW_LINES
+
 // Loggers from static methods with pointers to Engine
 #define DEBUG_P(engine,...) if( engine->debug && !engine->silent ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_P(engine,...) { engine->log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
@@ -890,6 +892,8 @@ void Engine::Search::start( const Engine* engine, const Search* search )
     Move bestMove = Move::nullMove;
     Move ponderMove = Move::nullMove;
 
+    short bestScore = std::numeric_limits<short>::lowest();
+
     // From whose perspective shall we consider this?
     bool asWhite = search->board->whiteToPlay();
 
@@ -950,8 +954,9 @@ void Engine::Search::start( const Engine* engine, const Search* search )
             break;
         }
 
-        // Don't waste clock time on a forced move
-        if ( moves.size() == 1 )
+        // Don't waste clock time on a forced move - unless it is a search move
+        // where we might just want to analyse that one move at depth
+        if ( moves.size() == 1 && search->goArgs->getSearchMoves().empty() )
         {
             DEBUG_P( engine, "Only one move available" );
 
@@ -962,7 +967,6 @@ void Engine::Search::start( const Engine* engine, const Search* search )
 
         // TODO sort moves
 
-        short bestScore = std::numeric_limits<short>::lowest();
         Board::State undo( search->board.get() );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
@@ -977,6 +981,7 @@ void Engine::Search::start( const Engine* engine, const Search* search )
                                            std::numeric_limits<short>::max(),
                                            false,
                                            asWhite,
+                                           false,
                                            ( *it ).toString() );
             search->board->unmakeMove( undo );
 
@@ -1005,6 +1010,8 @@ void Engine::Search::start( const Engine* engine, const Search* search )
 
     if ( !engine->quitting ) 
     {
+        INFO_P( engine, "Best move: %s - score %d", bestMove.toString(), bestScore );
+
         // TODO broadcast bestmove
         if ( ponderMove.isNullMove() )
         {
@@ -1022,7 +1029,7 @@ void Engine::Search::start( const Engine* engine, const Search* search )
     DEBUG_P( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 }
 
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+short Engine::minmax( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, bool quiescent, std::string line ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
@@ -1041,7 +1048,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         if ( score == 0 )
         {
             //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-            //DEBUG( "3: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+            DEBUG( "3: %s scores %d", line.c_str(), score );
+#endif
             return 0;
         }
         else
@@ -1068,16 +1077,20 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score += depth;
             }
 
-            //DEBUG( "2: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+            DEBUG( "2: %s scores %d", line.c_str(), score );
+#endif
             return score;
         }
     }
 
-    if ( depth == 0 || stopThinking )
+    if ( stopThinking || (depth <= 0 && !quiescent) )
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-        //DEBUG( "1: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+        DEBUG( "1: %s scores %d", line.c_str(), score );
+#endif
 
         return score;
     }
@@ -1094,10 +1107,20 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
+            // TODO Better would be to only generate non-quiet moves, but let's see how this fares first
+            if ( quiescent && !( *it ).isQuiet() )
+            {
+                continue;
+            }
 
+            //INFO( "Considering %s at depth %d (maximising) - %s", (*it).toString().c_str(), depth, ((*it).isQuiet() ? "quiet" : "non-quiet"));
+            
+            // Determine, but limit quiescent searching
+            bool quiesce = ( depth <= 1 && !( *it ).isQuiet() );
+            if ( depth < -4 ) quiesce = false;
+             
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + (*it).toString() );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, quiesce, line + " " + ( *it ).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation > score )
@@ -1115,7 +1138,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
         }
 
-        //DEBUG( "4: %s scores %d", line.c_str(), score);
+#ifdef SHOW_LINES
+        DEBUG( "4: %s scores %d", line.c_str(), score);
+#endif
         return score;
     }
     else
@@ -1130,9 +1155,20 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
+            // TODO Better would be to only generate non-quiet moves, but let's see how this fares first
+            if ( quiescent && !( *it ).isQuiet() )
+            {
+                continue;
+            }
+
+            //INFO( "Considering %s at depth %d (minimising) - %s", ( *it ).toString().c_str(), depth, ( ( *it ).isQuiet() ? "quiet" : "non-quiet" ) );
+
+            // Determine, but limit quiescent searching
+            bool quiesce = ( depth <= 1 && !( *it ).isQuiet() );
+            if ( depth < -4 ) quiesce = false;
+
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, quiesce, line + " " + ( *it ).toString() );
             board.unmakeMove( undo );
 
             if ( evaluation < score )
@@ -1150,7 +1186,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
         }
 
-        //DEBUG( "5: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+        DEBUG( "5: %s scores %d", line.c_str(), score );
+#endif
         return score;
     }
 }
