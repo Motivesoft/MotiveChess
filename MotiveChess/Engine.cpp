@@ -1027,7 +1027,13 @@ void Engine::Search::start( const Engine* engine, const Search* search )
     DEBUG_P( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 }
 
-short Engine::minmax( Board& board, unsigned short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+short Engine::quiesce( Board& board, short depth, short alphaInput, short betaInput, bool asWhite, std::string line ) const
+{
+    DEBUG( "Quiescence search of %s", line.c_str() );
+    return board.scorePosition( asWhite );
+}
+
+short Engine::minmax( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
@@ -1086,12 +1092,23 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         }
     }
 
-    if ( depth == 0 || stopThinking )
+    if ( stopThinking )
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
 #ifdef SHOW_LINES
         DEBUG( "1: %s scores %d", line.c_str(), score );
+#endif
+
+        return score;
+    }
+
+    if ( depth == 0 )
+    {
+        score = board.scorePosition( asWhite );
+        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+#ifdef SHOW_LINES
+        DEBUG( "7: %s scores %d", line.c_str(), score );
 #endif
 
         return score;

@@ -1059,13 +1059,11 @@ bool Board::isTerminal( short& score )
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
         if ( isAttacked( king, whiteToMove ) )
         {
-            //fprintf( stderr, "Think this is a loss for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
-            score = -1; // activeColor loses
+            score = -1; // activeColor loses - in check with no legal escape
             return true;
         }
         else
         {
-            //fprintf( stderr, "Think this is stalemate" );
             score = 0; // stalemate
             return true;
         }
