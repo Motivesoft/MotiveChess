@@ -1135,7 +1135,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
             }
             if ( score >= beta )
             {
-                INFO( "Exiting Q maximising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting Q maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -1180,7 +1180,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
             }
             if ( score <= alpha )
             {
-                INFO( "Exiting Q minimising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting Q minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -1311,7 +1311,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             }
             if ( score >= beta )
             {
-                INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -1360,7 +1360,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             }
             if ( score <= alpha )
             {
-                INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
