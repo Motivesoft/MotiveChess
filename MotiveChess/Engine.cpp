@@ -1053,11 +1053,11 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         }
         else
         {
-            DEBUG( "isTerminal returns %d (color corrected to %d) for %s", score, line.c_str() );
+            DEBUG( "isTerminal returns %d for %s", score, line.c_str());
             if ( board.whiteToPlay() != asWhite )
             {
                 score = -score;
-                DEBUG( "isTerminal result corrected to %d to be relative to current player", score );
+                DEBUG( "  result corrected to %d to be relative to current player", score );
             }
 
 #ifdef SHOW_LINES
