@@ -17,6 +17,8 @@
 #include "Perft.h"
 #include "Version.h"
 
+#define SHOW_LINES
+
 // Loggers from static methods with pointers to Engine
 #define DEBUG_P(engine,...) if( engine->debug && !engine->silent ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
 #define INFO_P(engine,...) { engine->log( Engine::LogLevel::INFO, __VA_ARGS__ ); }
@@ -950,8 +952,9 @@ void Engine::Search::start( const Engine* engine, const Search* search )
             break;
         }
 
-        // Don't waste clock time on a forced move
-        if ( moves.size() == 1 )
+        // Don't waste clock time on a forced move - unless it was a searchmove, where it is likely
+        // the user is just trying to analyse that single move at some depth
+        if ( moves.size() == 1 && search->goArgs->getSearchMoves().empty() )
         {
             DEBUG_P( engine, "Only one move available" );
 
@@ -1041,7 +1044,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
         if ( score == 0 )
         {
             //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-            //DEBUG( "3: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+            DEBUG( "3: %s scores %d", line.c_str(), score );
+#endif
             return 0;
         }
         else
@@ -1068,7 +1073,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
                 score += depth;
             }
 
-            //DEBUG( "2: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+            DEBUG( "2: %s scores %d", line.c_str(), score );
+#endif
             return score;
         }
     }
@@ -1077,7 +1084,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
     {
         score = board.scorePosition( asWhite );
         //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
-        //DEBUG( "1: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+        DEBUG( "1: %s scores %d", line.c_str(), score );
+#endif
 
         return score;
     }
@@ -1115,7 +1124,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
         }
 
-        //DEBUG( "4: %s scores %d", line.c_str(), score);
+#ifdef SHOW_LINES
+        DEBUG( "4: %s scores %d", line.c_str(), score);
+#endif
         return score;
     }
     else
@@ -1150,7 +1161,9 @@ short Engine::minmax( Board& board, unsigned short depth, short alphaInput, shor
             }
         }
 
-        //DEBUG( "5: %s scores %d", line.c_str(), score );
+#ifdef SHOW_LINES
+        DEBUG( "5: %s scores %d", line.c_str(), score );
+#endif
         return score;
     }
 }
