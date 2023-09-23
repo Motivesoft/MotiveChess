@@ -107,7 +107,7 @@ private:
     void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
-    short quiesce( Board& board, short depth, short alphaInput, short betaInput, bool asWhite, std::string line ) const;
+    short quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
     short minmax( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 
     /// <summary>

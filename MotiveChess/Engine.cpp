@@ -1027,9 +1027,166 @@ void Engine::Search::start( const Engine* engine, const Search* search )
     DEBUG_P( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
 }
 
-short Engine::quiesce( Board& board, short depth, short alphaInput, short betaInput, bool asWhite, std::string line ) const
+short Engine::quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
     DEBUG( "Quiescence search of %s", line.c_str() );
+
+    // Make some working values so we are not "editing" method parameters
+    short alpha = alphaInput;
+    short beta = betaInput;
+
+    // If is win, return max
+    // If is loss, return lowest
+    // If draw, return 0
+    // otherwise iterate
+
+    // Simple win semantics
+    short score = 0;
+    if ( board.isTerminal( score ) )
+    {
+        // Why? Win (+1), Loss (-1) or Stalemate (0)
+        if ( score == 0 )
+        {
+            //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+#ifdef SHOW_LINES
+            DEBUG( "Q3: %s scores %d", line.c_str(), score );
+#endif
+            return 0;
+        }
+        else
+        {
+            DEBUG( "isTerminal returns %d for %s", score, line.c_str() );
+            if ( board.whiteToPlay() != asWhite )
+            {
+                score = -score;
+                DEBUG( "  result corrected to %d to be relative to current player", score );
+            }
+
+#ifdef SHOW_LINES
+            DEBUG( "Q6: Score %d (terminal) as %s with %s to play from %s", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black", line.c_str() );
+#endif
+
+            // Give it a critially large value, but not quite at lowest/highest...
+            // so we have some wiggle room so we can make one winning line seem preferable to another
+            score = score < 0 ? std::numeric_limits<short>::lowest() + 1000 : std::numeric_limits<short>::max() - 1000;
+
+            // Adjusting the return with the depth means that it'll chase shorter lines to terminal positions rather
+            // than just settling for a forced mate being something it can commit to at any time
+            if ( score < 0 )
+            {
+                score -= depth;
+            }
+            else
+            {
+                score += depth;
+            }
+
+#ifdef SHOW_LINES
+            DEBUG( "Q2: %s scores %d", line.c_str(), score );
+#endif
+            return score;
+        }
+    }
+
+    if ( stopThinking )
+    {
+        score = board.scorePosition( asWhite );
+        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
+#ifdef SHOW_LINES
+        DEBUG( "Q1: %s scores %d", line.c_str(), score );
+#endif
+
+        return score;
+    }
+
+    if ( maximising )
+    {
+        score = std::numeric_limits<short>::lowest();
+
+        std::vector<Move> moves;
+        moves.reserve( 256 );
+        board.getMoves( moves );
+
+        int count = 1;
+        Board::State undo = Board::State( board );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
+        {
+            //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
+
+            if ( ( *it ).isQuiescent() )
+            {
+                continue;
+            }
+
+            board.applyMove( *it );
+
+            // Go into a quiescent search if it looks sensible to do so
+            short evaluation = quiesce( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+
+            board.unmakeMove( undo );
+
+            if ( evaluation > score )
+            {
+                score = evaluation;
+            }
+            if ( score > alpha )
+            {
+                alpha = score;
+            }
+            if ( score >= beta )
+            {
+                //INFO( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                break;
+            }
+        }
+
+#ifdef SHOW_LINES
+        DEBUG( "4: %s scores %d", line.c_str(), score );
+#endif
+        return score;
+    }
+    else
+    {
+        score = std::numeric_limits<short>::max();
+
+        std::vector<Move> moves;
+        moves.reserve( 256 );
+        board.getMoves( moves );
+
+        int count = 1;
+        Board::State undo = Board::State( board );
+        for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
+        {
+            //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
+            if ( ( *it ).isQuiescent() )
+            {
+                continue;
+            }
+
+            board.applyMove( *it );
+
+            // Go into a quiescent search if it looks sensible to do so
+            short evaluation = quiesce( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+
+            board.unmakeMove( undo );
+
+            if ( evaluation < score )
+            {
+                score = evaluation;
+            }
+            if ( score < beta )
+            {
+                beta = score;
+            }
+            if ( score <= alpha )
+            {
+                //INFO( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                break;
+            }
+        }
+    }
+
+    DEBUG( "QA: %s scores %d", line.c_str(), board.scorePosition( asWhite ) );
     return board.scorePosition( asWhite );
 }
 
@@ -1129,7 +1286,19 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
 
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + (*it).toString() );
+
+            // Go into a quiescent search if it looks sensible to do so
+            short evaluation;
+            if ( depth == 1 && !( *it ).isQuiescent() )
+            {
+                // TODO make depth configurable or calculated
+                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+            }
+            else
+            {
+                evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+            }
+
             board.unmakeMove( undo );
 
             if ( evaluation > score )
@@ -1166,7 +1335,19 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
             board.applyMove( *it );
-            short evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+
+            // Go into a quiescent search if it looks sensible to do so
+            short evaluation;
+            if ( depth == 1 && !( *it ).isQuiescent() )
+            {
+                // TODO make depth configurable or calculated
+                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+            }
+            else
+            {
+                evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+            }
+
             board.unmakeMove( undo );
 
             if ( evaluation < score )
