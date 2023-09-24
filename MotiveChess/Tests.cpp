@@ -212,20 +212,21 @@ std::vector<Tests::EPD> Tests::winAtChess =
 
 void Tests::runFullSuite( const Engine& engine )
 {
-    runSuite( engine, winAtChess );
+    Tests::Stats stats;
+    runSuite( engine, winAtChess, stats );
+
+    printf( "Completed: %d/%d\n", stats.pass, (stats.pass + stats.fail) );
 }
 
-void Tests::runSuite( const Engine& engine, const std::vector<Tests::EPD> epdSuite )
+void Tests::runSuite( const Engine& engine, const std::vector<Tests::EPD> epdSuite, Tests::Stats& stats )
 {
     for ( std::vector<Tests::EPD>::const_iterator it = epdSuite.cbegin(); it != epdSuite.cend(); it++ )
     {
-        runTest( engine, *it );
+        runTest( engine, *it, stats );
     }
-
-    printf( "Completed\n" );
 }
 
-void Tests::runTest( const Engine& engine, const Tests::EPD& epd )
+void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats )
 {
     //printf( "Name: %s\n", epd.name.c_str() );
 
@@ -294,11 +295,18 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd )
         printf( "  %s has %d potential match(es) for %s - skipping\n", epd.bestMove.c_str(), matchCount, epd.name.c_str());
     }
 
-//    Engine::Search::start( &engine, const Search * search, Tests::bestMoveHandler );
-    GoArguments goArgs = GoArguments::Builder().setDepth(6).build();
+    GoArguments goArgs = GoArguments::Builder().setDepth(4).build();
     Engine::Search search( *board, goArgs );
-    Engine::Search::start( &engine, &search, [engine,epd,match] ( const Move& bestMove, const Move& ponderMove )
+    Engine::Search::start( &engine, &search, [engine,epd,&stats,match] ( const Move& bestMove, const Move& ponderMove )
     {
-        printf( "EPD: %s : %s - %s\n", epd.name.c_str(), bestMove.toAlgebriacString().c_str(), (bestMove == match ? "SUCCESS" : "FAIL" ));
+        printf( "EPD: %s : %s cf %s - %s\n", epd.name.c_str(), bestMove.toAlgebriacString().c_str(), epd.bestMove.c_str(), ( bestMove == match ? "SUCCESS" : "FAIL" ));
+        if ( bestMove == match )
+        {
+            stats.pass++;
+        }
+        else
+        {
+            stats.fail++;
+        }
     } );
 }

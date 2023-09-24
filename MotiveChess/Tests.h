@@ -23,10 +23,17 @@ private:
         }
     };
 
+    class Stats
+    {
+    public:
+        unsigned short pass;
+        unsigned short fail;
+    };
+
     static std::vector<EPD> winAtChess;
 
-    static void runSuite( const Engine& engine, const std::vector<Tests::EPD> epd );
-    static void runTest( const Engine& engine, const Tests::EPD& epd );
+    static void runSuite( const Engine& engine, const std::vector<Tests::EPD> epd, Tests::Stats& stats );
+    static void runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats );
 
 public:
     static void runFullSuite( const Engine& engine );
