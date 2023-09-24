@@ -176,7 +176,7 @@ private:
 #endif
     }
 
-    void getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner );
+    void getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner );
     bool isAttacked( const unsigned long& index, const unsigned long long& attackingPieces, DirectionMask directionMask, BitScanner bitScanner );
 
 public:

@@ -24,6 +24,22 @@ public:
 
     static const unsigned long CHECKING_MOVE;
 
+    static const unsigned long MOVING_PIECE;
+    static const unsigned long MOVING_PAWN;
+    static const unsigned long MOVING_KNIGHT;
+    static const unsigned long MOVING_BISHOP;
+    static const unsigned long MOVING_ROOK;
+    static const unsigned long MOVING_QUEEN;
+    static const unsigned long MOVING_KING;
+
+    static const unsigned long CAPTURE_PIECE;
+    static const unsigned long CAPTURE_PAWN;
+    static const unsigned long CAPTURE_KNIGHT;
+    static const unsigned long CAPTURE_BISHOP;
+    static const unsigned long CAPTURE_ROOK;
+    static const unsigned long CAPTURE_QUEEN;
+    static const unsigned long CAPTURE_KING;
+
     static const unsigned long COMPARABLE_MASK;
     static const unsigned long NON_QUIESCENT;
 
@@ -65,9 +81,19 @@ public:
         return moveBits & 0b0000000000111111;
     }
 
-    inline unsigned long getPromotion() const
+    inline unsigned long getPromotionPiece() const
     {
         return moveBits & PROMOTION_MASK;
+    }
+
+    inline unsigned long getMovingPiece() const
+    {
+        return moveBits & MOVING_PIECE;
+    }
+
+    inline unsigned long getCapturePiece() const
+    {
+        return moveBits & CAPTURE_PIECE;
     }
 
     inline bool isPromotion() const
@@ -117,5 +143,6 @@ public:
     }
 
     std::string toString() const;
+    std::string toAlgebriacString() const;
 };
 

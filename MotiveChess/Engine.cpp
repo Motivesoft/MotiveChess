@@ -15,6 +15,7 @@
 #include "GoArguments.h"
 #include "Move.h"
 #include "Perft.h"
+#include "Tests.h"
 #include "Version.h"
 
 #define SHOW_LINES
@@ -54,6 +55,7 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 
     // Custom commands
     { "perft", &Engine::perftCommand },
+    { "tests", &Engine::testsCommand },
     { "wait", &Engine::waitCommand },
 };
 
@@ -614,6 +616,13 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
     }
 }
 
+void Engine::testsCommand( Engine& engine, const std::string& arguments )
+{
+    INFO_S( engine, "Processing tests command" );
+
+    Tests::runFullSuite( engine );
+}
+
 void Engine::waitCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing wait command" );
@@ -876,10 +885,20 @@ Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
 
 void Engine::Search::run( const Engine* engine )
 {
-    workerThread = new std::thread( &Engine::Search::start, engine, this );
+    workerThread = new std::thread( &Engine::Search::start, engine, this, [engine] ( const Move& bestMove, const Move& ponderMove )
+    {
+        if ( ponderMove.isNullMove() )
+        {
+            engine->bestmoveBroadcast( bestMove );
+        }
+        else
+        {
+            engine->bestmoveBroadcast( bestMove, ponderMove );
+        }
+    } );
 }
 
-void Engine::Search::start( const Engine* engine, const Search* search )
+void Engine::Search::start( const Engine* engine, const Search* search, const std::function<void( const Move&, const Move& )>& bestMoveHandler )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
     DEBUG_P( engine, "Starting a search" );
@@ -1010,15 +1029,8 @@ void Engine::Search::start( const Engine* engine, const Search* search )
     if ( !engine->quitting ) 
     {
         DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString(), bestScore );
-
-        if ( ponderMove.isNullMove() )
-        {
-            engine->bestmoveBroadcast( bestMove );
-        }
-        else
-        {
-            engine->bestmoveBroadcast( bestMove, ponderMove );
-        }
+        
+        bestMoveHandler( bestMove, ponderMove );
     }
 
     // TODO delete this when we're happy

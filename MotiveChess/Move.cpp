@@ -21,6 +21,20 @@ const unsigned long Move::CASTLING_QSIDE   = 0b00000000000001000000000000000000;
 
 const unsigned long Move::CHECKING_MOVE    = 0b00000000000010000000000000000000;
 
+const unsigned long Move::MOVING_PIECE     = 0b00000000011100000000000000000000;
+const unsigned long Move::MOVING_PAWN      = 0b00000000000100000000000000000000;
+const unsigned long Move::MOVING_KNIGHT    = 0b00000000001000000000000000000000;
+const unsigned long Move::MOVING_BISHOP    = 0b00000000001100000000000000000000;
+const unsigned long Move::MOVING_ROOK      = 0b00000000010000000000000000000000;
+const unsigned long Move::MOVING_QUEEN     = 0b00000000010100000000000000000000;
+const unsigned long Move::MOVING_KING      = 0b00000000011000000000000000000000;
+
+const unsigned long Move::CAPTURE_PIECE    = 0b00000011100000000000000000000000;
+const unsigned long Move::CAPTURE_KNIGHT   = 0b00000010000000000000000000000000;
+const unsigned long Move::CAPTURE_BISHOP   = 0b00000010100000000000000000000000;
+const unsigned long Move::CAPTURE_ROOK     = 0b00000011000000000000000000000000;
+const unsigned long Move::CAPTURE_QUEEN    = 0b00000011100000000000000000000000;
+
 const unsigned long Move::NON_QUIESCENT    = PROMOTION_MASK | CAPTURE | CASTLING_MASK | CHECKING_MOVE;
 const unsigned long Move::COMPARABLE_MASK  = PROMOTION_MASK | FROM_MASK | TO_MASK;
 
@@ -96,6 +110,108 @@ std::string Move::toString() const
         case QUEEN:
             move << "q";
             break;
+    }
+
+    //if ( isCheckingMove() ) move << "+";
+    //if ( isPromotion() ) move << ">";
+    //if ( isCapture() ) move << "x";
+    //if ( isCastling() ) move << "o";
+
+    return move.str();
+}
+
+std::string Move::toAlgebriacString() const
+{
+    if ( isNullMove() )
+    {
+        // See UCI spec
+        return "0000";
+    }
+
+    std::stringstream move;
+
+    if ( !isCastling() )
+    {
+        unsigned char fromRank = ( moveBits >> 9 ) & 0b00000111;
+        unsigned char fromFile = ( moveBits >> 6 ) & 0b00000111;
+        unsigned char toRank = ( moveBits >> 3 ) & 0b00000111;
+        unsigned char toFile = ( moveBits ) & 0b00000111;
+        unsigned long promotion = moveBits & PROMOTION_MASK;
+
+        switch ( moveBits & MOVING_PIECE )
+        {
+            default:
+            case MOVING_PAWN:
+                if ( isCapture() )
+                {
+                    move << (char)('a'+fromFile);
+                }
+                break;
+
+            case MOVING_KNIGHT:
+                move << "N";
+                break;
+
+            case MOVING_BISHOP:
+                move << "B";
+                break;
+
+            case MOVING_ROOK:
+                move << "R";
+                break;
+
+            case MOVING_QUEEN:
+                move << "Q";
+                break;
+
+            case MOVING_KING:
+                move << "K";
+                break;
+        }
+
+        if ( isCapture() )
+        {
+            move << "x";
+        }
+
+        move << (char) ( 'a' + toFile ) << (char) ( '1' + toRank );
+
+        switch ( promotion )
+        {
+            case KNIGHT:
+                move << "=N";
+                break;
+
+            case BISHOP:
+                move << "=B";
+                break;
+
+            case ROOK:
+                move << "=R";
+                break;
+
+            case QUEEN:
+                move << "=Q";
+                break;
+
+            default:
+                break;
+        }
+    }
+    else
+    {
+        move << "o-o";
+
+        if ( ( moveBits & CASTLING_QSIDE ) == CASTLING_QSIDE )
+        {
+            move << "-o";
+        }
+    }
+
+    if ( isCheckingMove() )
+    {
+        // Be warned, this does not have the means to also identify mate
+        move << "+";
     }
 
     //if ( isCheckingMove() ) move << "+";

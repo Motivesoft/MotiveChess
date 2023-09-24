@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -179,6 +180,7 @@ public:
 
     // Command handlers - custom commands
     static void perftCommand( Engine& engine, const std::string& arguments );
+    static void testsCommand( Engine& engine, const std::string& arguments );
     static void waitCommand( Engine& engine, const std::string& arguments );
 
     // Broadcast - standard UCI commands
@@ -204,7 +206,7 @@ public:
     public:
         Search( Board& board, const GoArguments& goArgs );
 
-        static void start( const Engine* engine, const Search* search );
+        static void start( const Engine* engine, const Search* search, const std::function<void( const Move&, const Move& )>& bestMoveHandler );
 
         void run( const Engine* engine );
 
