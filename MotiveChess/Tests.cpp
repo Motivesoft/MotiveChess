@@ -297,8 +297,8 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd )
 //    Engine::Search::start( &engine, const Search * search, Tests::bestMoveHandler );
     GoArguments goArgs = GoArguments::Builder().setDepth(6).build();
     Engine::Search search( *board, goArgs );
-    Engine::Search::start( &engine, &search, [engine,epd] ( const Move& bestMove, const Move& ponderMove )
+    Engine::Search::start( &engine, &search, [engine,epd,match] ( const Move& bestMove, const Move& ponderMove )
     {
-        printf( "EPD: %s", epd.name.c_str() );
+        printf( "EPD: %s : %s - %s\n", epd.name.c_str(), bestMove.toAlgebriacString().c_str(), (bestMove == match ? "SUCCESS" : "FAIL" ));
     } );
 }
