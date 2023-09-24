@@ -1113,7 +1113,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         {
             //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
 
-            if ( ( *it ).isQuiescent() )
+            if ( ( *it ).isQuiet() )
             {
                 continue;
             }
@@ -1158,7 +1158,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
             //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
-            if ( ( *it ).isQuiescent() )
+            if ( ( *it ).isQuiet() )
             {
                 continue;
             }
@@ -1289,7 +1289,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            if ( depth == 1 && !( *it ).isQuiescent() )
+            if ( depth == 1 && !( *it ).isQuiet() )
             {
                 // TODO make depth configurable or calculated
                 evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
@@ -1338,7 +1338,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            if ( depth == 1 && !( *it ).isQuiescent() )
+            if ( depth == 1 && !( *it ).isQuiet() )
             {
                 // TODO make depth configurable or calculated
                 evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce

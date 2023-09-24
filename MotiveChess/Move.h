@@ -105,7 +105,7 @@ public:
         return moveBits & CHECKING_MOVE;
     }
 
-    inline bool isQuiescent() const
+    inline bool isQuiet() const
     {
         return ( moveBits & NON_QUIESCENT ) == 0;
     }
