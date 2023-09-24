@@ -1046,17 +1046,10 @@ short Board::scorePosition( bool scoreForWhite ) const
 }
 
 // TODO make this method const - which also means doing getMoves and children
-// TODO check that score is correctly returning the value (-1,0,+1)
+// Return only draw (stalemate) or loss (checkmate). Win detection (checkmate) while have previously called this method
+// for the opponent and seen it as a loss
 bool Board::isTerminal( short& score )
 {
-    unsigned long long king = bitboards[ ( whiteToMove ? BLACK : WHITE ) + KING ];
-    if ( isAttacked( king, !whiteToMove ) )
-    {
-        //fprintf( stderr, "Think this is a win for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
-        score = +1; // We can take the opponent's king and therefore, win
-        return true;
-    }
-
     std::vector<Move> moves;
     moves.reserve( 256 );
     getMoves( moves );
@@ -1066,13 +1059,11 @@ bool Board::isTerminal( short& score )
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
         if ( isAttacked( king, whiteToMove ) )
         {
-            //fprintf( stderr, "Think this is a loss for %s", ( whiteToMove ? "WHITE" : "BLACK" ) );
-            score = -1; // activeColor loses
+            score = -1; // activeColor loses - in check with no legal escape
             return true;
         }
         else
         {
-            //fprintf( stderr, "Think this is stalemate" );
             score = 0; // stalemate
             return true;
         }
