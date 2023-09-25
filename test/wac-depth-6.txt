@@ -177,7 +177,7 @@ EPD: WAC.242 : Rxd7 - Success
 EPD: WAC.250 : Re1 - Failure, expected Re8+
 EPD: WAC.253 : Qe8+ - Success
 EPD: WAC.254 : Nxh3 - Success
-EPD: WAC.255 : Rxg6+ - Failure, expected Rfxg6+
+EPD: WAC.255 : Rxg6+ - Failure, expected Rfxg6+ -- actually, Success - false negative due to move encoding
 EPD: WAC.256 : Nf5 - Success
 EPD: WAC.257 : Rxd4 - Success
 EPD: WAC.258 : Bxg6 - Success
@@ -199,8 +199,8 @@ EPD: WAC.286 : Rxd5+ - Success
 EPD: WAC.288 : Ng3 - Failure, expected Nf6+
 EPD: WAC.289 : Qe5 - Success
 EPD: WAC.292 : d6+ - Success
-EPD: WAC.293 : Ng5 - Failure, expected Nfg5
+EPD: WAC.293 : Ng5 - Failure, expected Nfg5 -- actually, Success - false negative down to move encoding
 EPD: WAC.295 : Rxd5+ - Success
 EPD: WAC.298 : Qh8+ - Success
 EPD: WAC.300 : g6 - Success
-Completed: 159/201
+Completed: 161/201 -- adjusted
