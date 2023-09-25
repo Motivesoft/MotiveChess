@@ -644,13 +644,16 @@ void Engine::testsCommand( Engine& engine, const std::string& arguments )
     {
         filename = filenames.substr( 0, pos );
 
+        INFO_S( engine, "Running tests from: %s", filename.c_str() );
         Tests::runSuite( engine, filename );
 
         filenames.erase( 0, pos + delimiter.length() );
     }
 
     // Run with the last one
-    Tests::runSuite( engine, filenames );
+    filename = filenames;
+    INFO_S( engine, "Running tests from: %s", filename.c_str() );
+    Tests::runSuite( engine, filename );
 }
 
 void Engine::waitCommand( Engine& engine, const std::string& arguments )
