@@ -22,7 +22,9 @@ public:
     static const unsigned long CASTLING_QSIDE;
     static const unsigned long CASTLING_KSIDE;
 
+    static const unsigned long CHECKING_MASK;
     static const unsigned long CHECKING_MOVE;
+    static const unsigned long UNCHECKING_MOVE;
 
     static const unsigned long MOVING_PIECE;
     static const unsigned long MOVING_PAWN;
@@ -127,8 +129,12 @@ public:
 
     inline bool isCheckingMove() const
     {
-        // Any kind of check, so no need for precise match
         return moveBits & CHECKING_MOVE;
+    }
+
+    inline bool isUncheckingMove()
+    {
+        return moveBits & UNCHECKING_MOVE;
     }
 
     inline bool isQuiet() const
@@ -138,8 +144,12 @@ public:
 
     inline bool setCheckingMove()
     {
-        // Any kind of capture, so no need for precise match
         return moveBits |= CHECKING_MOVE;
+    }
+
+    inline bool setUncheckingMove()
+    {
+        return moveBits |= UNCHECKING_MOVE;
     }
 
     std::string toString() const;

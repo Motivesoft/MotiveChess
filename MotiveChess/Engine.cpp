@@ -885,7 +885,7 @@ Engine::Search::Search( Board& board, const GoArguments& goArgs ) :
 
 void Engine::Search::run( const Engine* engine )
 {
-    workerThread = new std::thread( &Engine::Search::start, engine, this, [engine] ( const Move& bestMove, const Move& ponderMove )
+    workerThread = new std::thread( &Engine::Search::start, engine, this, &stats, [engine] ( const Move& bestMove, const Move& ponderMove )
     {
         if ( ponderMove.isNullMove() )
         {
@@ -898,7 +898,7 @@ void Engine::Search::run( const Engine* engine )
     } );
 }
 
-void Engine::Search::start( const Engine* engine, const Search* search, const std::function<void( const Move&, const Move& )>& bestMoveHandler )
+void Engine::Search::start( const Engine* engine, const Search* search, Stats* stats, const std::function<void( const Move&, const Move& )>& bestMoveHandler )
 {
     // detach a thread to perform the search and - somehow - track for shutdown queues from Engine
     DEBUG_P( engine, "Starting a search" );
@@ -928,6 +928,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, const st
         moves.reserve( 256 );
          
         search->board->getMoves( moves );
+        stats->nodesTotal += moves.size();
 
         // Filter on searchMoves, if there are any
         if ( !search->goArgs->getSearchMoves().empty() )
@@ -1036,7 +1037,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, const st
     // TODO delete this when we're happy
     auto endSearch = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = endSearch - startSearch;
-    DEBUG_P( engine, "Search completed (%.6f s) (%d ms)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count() );
+    DEBUG_P( engine, "Search completed (%.6f s) (%d ms) (%d/%d nodes)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count(), stats->nodesConsidered, stats->nodesTotal );
 }
 
 short Engine::quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
@@ -1067,11 +1068,11 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         }
         else
         {
-            DEBUG( "isTerminal returns %d for %s", score, line.c_str() );
+            DEBUG( "Q isTerminal returns %d for %s", score, line.c_str() );
             if ( board.whiteToPlay() != asWhite )
             {
                 score = -score;
-                DEBUG( "  result corrected to %d to be relative to current player", score );
+                DEBUG( "Q  result corrected to %d to be relative to current player", score );
             }
 
 #ifdef SHOW_LINES
@@ -1119,16 +1120,28 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         moves.reserve( 256 );
         board.getMoves( moves );
 
+        for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
+        {
+            if ( ( *it ).isQuiet() )
+            {
+                it = moves.erase( it );
+            }
+            else
+            {
+                it++;
+            }
+        }
+        if ( moves.empty() )
+        {
+            DEBUG( "Q8: %s scores %d", line.c_str(), board.scorePosition( asWhite ) );
+            return board.scorePosition( asWhite );
+        }
+
         int count = 1;
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
-
-            if ( ( *it ).isQuiet() )
-            {
-                continue;
-            }
+            INFO( "Q Considering %s at depth %d (maximising)", (line+" "+( *it ).toString().c_str()).c_str(), depth);
 
             board.applyMove( *it );
 
@@ -1147,13 +1160,13 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
             }
             if ( score >= beta )
             {
-                DEBUG( "Exiting Q maximising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Q Exiting maximising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
 
 #ifdef SHOW_LINES
-        DEBUG( "4: %s scores %d", line.c_str(), score );
+        DEBUG( "Q4: %s scores %d", line.c_str(), score );
 #endif
         return score;
     }
@@ -1165,15 +1178,28 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         moves.reserve( 256 );
         board.getMoves( moves );
 
+        for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
+        {
+            if ( ( *it ).isQuiet() )
+            {
+                it = moves.erase( it );
+            }
+            else
+            {
+                it++;
+            }
+        }
+        if ( moves.empty() )
+        {
+            DEBUG( "Q9: %s scores %d", line.c_str(), board.scorePosition( asWhite ) );
+            return board.scorePosition( asWhite );
+        }
+
         int count = 1;
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
-            if ( ( *it ).isQuiet() )
-            {
-                continue;
-            }
+            INFO( "Q Considering %s at depth %d (minimising)", (line+" "+( *it ).toString().c_str()).c_str(), depth);
 
             board.applyMove( *it );
 
@@ -1192,7 +1218,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
             }
             if ( score <= alpha )
             {
-                DEBUG( "Exiting Q minimising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Q Exiting minimising after %d/%d moves considered", count, moves.size() );
                 break;
             }
         }
@@ -1295,18 +1321,19 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (maximising)", (*it).toString().c_str(), depth);
+            INFO( "Considering %s at depth %d (maximising)", (line + " " + (*it).toString().c_str()).c_str(), depth);
 
             board.applyMove( *it );
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            if ( depth == 1 && !( *it ).isQuiet() )
-            {
-                // TODO make depth configurable or calculated
-                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
-            }
-            else
+            //if ( depth == 1 && !( *it ).isQuiet() )
+            //{
+            //    // TODO make depth configurable or calculated
+            //    evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+            //    DEBUG( "***** Back from Q (max) with %d", evaluation );
+            //}
+            //else
             {
                 evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
@@ -1345,17 +1372,18 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            //INFO( "Considering %s at depth %d (minimising)", ( *it ).toString().c_str(), depth);
+            INFO( "Considering %s at depth %d (minimising)", (line + " " + ( *it ).toString().c_str()).c_str(), depth);
             board.applyMove( *it );
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            if ( depth == 1 && !( *it ).isQuiet() )
-            {
-                // TODO make depth configurable or calculated
-                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
-            }
-            else
+            //if ( depth == 1 && !( *it ).isQuiet() )
+            //{
+            //    // TODO make depth configurable or calculated
+            //    evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+            //    DEBUG( "***** Back from Q (min) with %d", evaluation );
+            //}
+            //else
             {
                 evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }

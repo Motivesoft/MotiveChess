@@ -1,0 +1,27 @@
+
+
+position fen R7/P4k2/8/8/8/8/r7/6K1 w - -
+go depth 1
+
+
+DEBUG : Considering a8h8
+DEBUG : Quiescence search of a8h8 a2g2
+DEBUG : Quiescence search of a8h8 a2g2 g1g2
+DEBUG : QA: a8h8 a2g2 g1g2 scores 600
+DEBUG : 4: a8h8 a2g2 scores 600
+DEBUG : Quiescence search of a8h8 a2a1
+DEBUG : 4: a8h8 a2a1 scores -32768
+DEBUG : Exiting minimising after 2/18 moves considered
+DEBUG : 5: a8h8 scores -32768
+DEBUG :   score for a8h8 is -32768 (0.007900 s) (7 ms)
+
+
+
+-=- why this sudden jump into a deep QS
+DEBUG : Exiting minimising after 1/18 moves considered
+DEBUG : 5: a8h8 a2a1 g1h2 scores 0
+DEBUG : 4: a8h8 a2a1 scores 0
+DEBUG : Quiescence search of a8h8 a2a7 h8h7 f7e6 h7h6 e6d5 h6h5
+DEBUG : QA: a8h8 a2a7 h8h7 f7e6 h7h6 e6d5 h6h5 scores 0
+DEBUG : Exiting maximising after 1/19 moves considered
+DEBUG : 4: a8h8 a2a7 h8h7 f7e6 h7h6 e6d5 scores 0

@@ -195,6 +195,21 @@ public:
     void infoBroadcast( const std::string&, const char* format, ... ) const;
     void optionBroadcast( const std::string& id, bool value ) const;
 
+    class Stats
+    {
+    public:
+        size_t nodesConsidered;
+        size_t nodesExcluded;
+        size_t nodesTotal;
+
+        Stats() :
+            nodesConsidered( 0 ),
+            nodesExcluded( 0 ),
+            nodesTotal( 0 )
+        {
+        }
+    };
+
     class Search
     {
     private:
@@ -206,7 +221,9 @@ public:
     public:
         Search( Board& board, const GoArguments& goArgs );
 
-        static void start( const Engine* engine, const Search* search, const std::function<void( const Move&, const Move& )>& bestMoveHandler );
+        static void start( const Engine* engine, const Search* search, Stats* stats, const std::function<void( const Move&, const Move& )>& bestMoveHandler );
+
+        Engine::Stats stats;
 
         void run( const Engine* engine );
 

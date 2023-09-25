@@ -58,6 +58,15 @@ void Board::getMoves( std::vector<Move>& moves )
     // King (including castling, castling flag set)
     getKingMoves( moves, bitboardPieceIndex + KING, accessibleSquares, attackPieces );
 
+#ifdef SET_CHECK_FLAG
+    bool uncheckingMove = false;
+    // Essentially, are we currently in check before making our move
+    if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], whiteToMove ) )
+    {
+        uncheckingMove = true;
+    }
+#endif
+
     // TODO is the king in check after any of these moves?
     Board::State state( this );
     for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
@@ -66,9 +75,17 @@ void Board::getMoves( std::vector<Move>& moves )
 
 #ifdef SET_CHECK_FLAG
         // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+
+        // Are we putting our oppenent into check?
         if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
         {
             ( *it ).setCheckingMove();
+        }
+
+        // Are we getting ourselves out of check
+        if ( uncheckingMove )
+        {
+            ( *it ).setUncheckingMove();
         }
 #endif
 
@@ -91,6 +108,10 @@ void Board::getMoves( std::vector<Move>& moves )
         if ( a.isCheckingMove() != b.isCheckingMove() ) // includes en passant
         {
             return a.isCheckingMove();
+        }
+        if ( a.isUncheckingMove() != b.isUncheckingMove() ) // includes en passant
+        {
+            return a.isUncheckingMove();
         }
 #endif
         if ( a.isCapture() != b.isCapture() ) // includes en passant

@@ -307,7 +307,7 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
 
     GoArguments goArgs = GoArguments::Builder().setDepth(4).build();
     Engine::Search search( *board, goArgs );
-    Engine::Search::start( &engine, &search, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
+    Engine::Search::start( &engine, &search, &search.stats, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
     {
         printf( "EPD: %s : %s", epd.name.c_str(), bestMove.toAlgebriacString().c_str() );
         if ( std::find( epd.bestMoves.cbegin(), epd.bestMoves.cend(), bestMove.toAlgebriacString() ) != epd.bestMoves.cend() )
