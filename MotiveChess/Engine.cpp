@@ -1033,6 +1033,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
             short score = engine->minmax( *(search->board.get()),
                                           stats,
                                           depth,
+                                          false,
                                           std::numeric_limits<short>::lowest(),
                                           std::numeric_limits<short>::max(),
                                           false,
@@ -1266,7 +1267,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
     return board.scorePosition( asWhite );
 }
 
-short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
@@ -1373,7 +1374,13 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             else
 #endif
             {
-                evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                if ( quiescent && ( *it ).isQuiet() ) continue;
+                if ( depth == 1 && !quiescent && !(*it).isQuiet() )
+                {
+                    quiescent = true;
+                    depth = 5;
+                }
+                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
 
             board.unmakeMove( undo );
@@ -1432,7 +1439,13 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             else
 #endif
             {
-                evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                if ( quiescent && ( *it ).isQuiet() ) continue;
+                if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
+                {
+                    quiescent = true;
+                    depth = 5;
+                }
+                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
 
             board.unmakeMove( undo );

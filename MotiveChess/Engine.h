@@ -239,5 +239,5 @@ public:
 
 private:
     short quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
-    short minmax( Board& board, Stats* stats, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
+    short minmax( Board& board, Stats* stats, short depth, bool quiescent, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 };
