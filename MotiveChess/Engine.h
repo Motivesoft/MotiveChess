@@ -108,9 +108,6 @@ private:
     void log( LogLevel level, const char* format, ... ) const;
     void broadcast( const char* format, ... ) const;
 
-    short quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
-    short minmax( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
-
     /// <summary>
     /// Set a flag to ask the current search to stop, and then wait for that to happen
     /// </summary>
@@ -198,12 +195,10 @@ public:
     class Stats
     {
     public:
-        size_t nodesConsidered;
         size_t nodesExcluded;
         size_t nodesTotal;
 
         Stats() :
-            nodesConsidered( 0 ),
             nodesExcluded( 0 ),
             nodesTotal( 0 )
         {
@@ -241,4 +236,8 @@ public:
     };
 
     Engine::Search* currentSearch;
+
+private:
+    short quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
+    short minmax( Board& board, Stats* stats, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const;
 };

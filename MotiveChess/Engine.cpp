@@ -996,12 +996,13 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
 
             search->board->applyMove( *it );
             short score = engine->minmax( *(search->board.get()),
-                                           depth,
-                                           std::numeric_limits<short>::lowest(),
-                                           std::numeric_limits<short>::max(),
-                                           false,
-                                           asWhite,
-                                           ( *it ).toString() );
+                                          stats,
+                                          depth,
+                                          std::numeric_limits<short>::lowest(),
+                                          std::numeric_limits<short>::max(),
+                                          false,
+                                          asWhite,
+                                          ( *it ).toString() );
             search->board->unmakeMove( undo );
 
             if ( score > bestScore )
@@ -1037,7 +1038,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
     // TODO delete this when we're happy
     auto endSearch = std::chrono::steady_clock::now();
     std::chrono::duration<double> diff = endSearch - startSearch;
-    DEBUG_P( engine, "Search completed (%.6f s) (%d ms) (%d/%d nodes)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count(), stats->nodesConsidered, stats->nodesTotal );
+    DEBUG_P( engine, "Search completed (%.6f s) (%d ms) (%d/%d nodes)", diff, std::chrono::duration_cast<std::chrono::milliseconds>( diff ).count(), stats->nodesTotal-stats->nodesExcluded, stats->nodesTotal );
 }
 
 short Engine::quiesce( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
@@ -1228,7 +1229,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
     return board.scorePosition( asWhite );
 }
 
-short Engine::minmax( Board& board, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
+short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput, short betaInput, bool maximising, bool asWhite, std::string line ) const
 {
     // Make some working values so we are not "editing" method parameters
     short alpha = alphaInput;
@@ -1315,7 +1316,9 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
 
         std::vector<Move> moves;
         moves.reserve( 256 );
+        
         board.getMoves( moves );
+        stats->nodesTotal += moves.size();
 
         int count = 1;
         Board::State undo = Board::State( board );
@@ -1335,7 +1338,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             //}
             //else
             {
-                evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
 
             board.unmakeMove( undo );
@@ -1351,6 +1354,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             if ( score >= beta )
             {
                 DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                stats->nodesExcluded += ( moves.size() - count );
                 break;
             }
         }
@@ -1366,7 +1370,9 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
 
         std::vector<Move> moves;
         moves.reserve( 256 );
+
         board.getMoves( moves );
+        stats->nodesTotal += moves.size();
 
         int count = 1;
         Board::State undo = Board::State( board );
@@ -1385,7 +1391,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             //}
             //else
             {
-                evaluation = minmax( board, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
 
             board.unmakeMove( undo );
@@ -1401,6 +1407,7 @@ short Engine::minmax( Board& board, short depth, short alphaInput, short betaInp
             if ( score <= alpha )
             {
                 DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                stats->nodesExcluded += ( moves.size() - count );
                 break;
             }
         }
