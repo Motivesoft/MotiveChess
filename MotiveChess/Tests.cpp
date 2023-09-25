@@ -33,14 +33,28 @@ void Tests::runSuite( const Engine& engine, const std::string& filename )
             size_t bmSeparator = line.find( ";" );
             if ( bmSeparator != std::string::npos )
             {
-                bm = line.substr( fenSeparator, bmSeparator - fenSeparator - 1 );
+                // Step over 'bm' bit
+                bm = line.substr( fenSeparator + 2, bmSeparator - fenSeparator );
+
+                while ( !bm.empty() && (bm.starts_with( " " ) || bm.starts_with( "\t" ) ) )
+                {
+                    bm = bm.substr( 1 );
+                }
+                while ( !bm.empty() && ( bm.ends_with( ";" ) || bm.ends_with( " " ) ) )
+                {
+                    bm = bm.substr( 0, bm.length() - 1 );
+                }
 
                 size_t nameSeparator = line.find( "\"" );
                 if ( nameSeparator != std::string::npos )
                 {
                     name = line.substr( nameSeparator );
 
-                    while ( name.ends_with( ";" ) || name.ends_with( "\n" ) )
+                    while ( !name.empty() && name.starts_with( "\"" ) )
+                    {
+                        name = name.substr( 1 );
+                    }
+                    while (!name.empty() && ( name.ends_with( ";" ) || name.ends_with( "\"" ) ) )
                     {
                         name = name.substr( 0, name.length() - 1 );
                     }
