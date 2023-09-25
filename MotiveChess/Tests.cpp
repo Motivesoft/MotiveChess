@@ -7,7 +7,7 @@
 
 std::vector<Tests::EPD> Tests::winAtChess = 
 {
-//{ "5rk1/1ppb3p/p1pb4/6q1/3P1p1r/2P1R2P/PP1BQ1P1/5RKN w - -", "Rg3", "WAC.003" },
+{ "5rk1/1ppb3p/p1pb4/6q1/3P1p1r/2P1R2P/PP1BQ1P1/5RKN w - -", "Rg3", "WAC.003" },
 { "r1bq2rk/pp3pbp/2p1p1pQ/7P/3P4/2PB1N2/PP3PPR/2KR4 w - -", "Qxh7+", "WAC.004" },
 { "5k2/6pp/p1qN4/1p1p4/3P4/2PKP2Q/PP3r2/3R4 b - -", "Qc4+", "WAC.005" },
 { "7k/p7/1R5K/6r1/6p1/6P1/8/8 w - -", "Rb7", "WAC.006" },
@@ -315,7 +315,12 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
             printf( " - Success\n" );
             stats.pass++;
         }
-        else
+        else if ( epd.bestMoves.size() == 1 )
+        {
+            printf( " - Failure, expected %s\n", epd.bestMovesString.c_str() );
+            stats.fail++;
+        }
+        else 
         {
             printf( " - Failure, expected one of %s\n", epd.bestMovesString.c_str() );
             stats.fail++;
