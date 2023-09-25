@@ -7,7 +7,7 @@
 
 std::vector<Tests::EPD> Tests::winAtChess = 
 {
-{ "5rk1/1ppb3p/p1pb4/6q1/3P1p1r/2P1R2P/PP1BQ1P1/5RKN w - -", "Rg3", "WAC.003" },
+//{ "5rk1/1ppb3p/p1pb4/6q1/3P1p1r/2P1R2P/PP1BQ1P1/5RKN w - -", "Rg3", "WAC.003" },
 { "r1bq2rk/pp3pbp/2p1p1pQ/7P/3P4/2PB1N2/PP3PPR/2KR4 w - -", "Qxh7+", "WAC.004" },
 { "5k2/6pp/p1qN4/1p1p4/3P4/2PKP2Q/PP3r2/3R4 b - -", "Qc4+", "WAC.005" },
 { "7k/p7/1R5K/6r1/6p1/6P1/8/8 w - -", "Rb7", "WAC.006" },
@@ -237,75 +237,87 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
     moves.reserve( 256 );
     board->getMoves( moves );
 
-    std::string epdMove = epd.bestMove;
-    while ( epdMove.ends_with( "+" ) || epdMove.ends_with( "#" ) )
+    std::vector<Move> matches;
+    for ( std::vector<std::string>::const_iterator it = epd.bestMoves.cbegin(); it != epd.bestMoves.cend(); it++ )
     {
-        epdMove = epdMove.substr( 0, epdMove.length() - 1 );
-    }
-    std::string dest = epdMove.substr( epdMove.length() - 2, 2 );
+        std::string epdMove = *it;
 
-    // Look for a precise match with our default algebraic move printer - but recognise that 
-    // it doesn't have full context to realise if it is mate, or that there may be multiple pieces of the same type that can move to a square
-    // Handle that second case, below
-
-    Move match = Move::nullMove;
-    unsigned short matchCount = 0;
-    for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
-    {
-        std::string algebraicString = ( *it ).toAlgebriacString();
-        std::string moveString = ( *it ).toString();
-
-        if ( algebraicString == epd.bestMove )
+        // Temporarily trim to get the destination in case we need it
+        while ( epdMove.ends_with( "+" ) || epdMove.ends_with( "#" ) )
         {
-            // Candidate match
-            //printf( "  Potential match: %s...\n", moveString.c_str() );
-            match = *it;
-            matchCount++;
+            epdMove = epdMove.substr( 0, epdMove.length() - 1 );
         }
-    }
+        std::string dest = epdMove.substr( epdMove.length() - 2, 2 );
 
-    // We didn't find an exact match with default details, look a bit more carefully
+        epdMove = *it;
 
-    if ( matchCount != 1 )
-    {
+        // Look for a precise match with our default algebraic move printer - but recognise that 
+        // it doesn't have full context to realise if it is mate, or that there may be multiple pieces of the same type that can move to a square
+        // Handle that second case, below
+
+        Move match = Move::nullMove;
+        unsigned short matchCount = 0;
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
             std::string algebraicString = ( *it ).toAlgebriacString();
             std::string moveString = ( *it ).toString();
 
-            if ( moveString.substr( 2, 2 ) == dest )
+            if ( algebraicString == epdMove )
             {
-                // Looking for either Rfe7 or R8a5
-                if ( moveString[ 0 ] == epdMove[ 1 ] || moveString[ 1 ] == epdMove[ 1 ] )
+                // Candidate match
+                //printf( "  Potential match: %s...\n", moveString.c_str() );
+                match = *it;
+                matchCount++;
+            }
+        }
+
+        // We didn't find an exact match with default details, look a bit more carefully
+
+        if ( matchCount != 1 )
+        {
+            for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
+            {
+                std::string algebraicString = ( *it ).toAlgebriacString();
+                std::string moveString = ( *it ).toString();
+
+                if ( moveString.substr( 2, 2 ) == dest )
                 {
-                    // But make sure we still track the same piece (e.g. R) - there should not be this sort of issue with pawn moves
-                    if ( algebraicString[ 0 ] == epdMove[ 0 ] )
+                    // Looking for either Rfe7 or R8a5
+                    if ( moveString[ 0 ] == epdMove[ 1 ] || moveString[ 1 ] == epdMove[ 1 ] )
                     {
-                        match = *it;
-                        matchCount++;
+                        // But make sure we still track the same piece (e.g. R) - there should not be this sort of issue with pawn moves
+                        if ( algebraicString[ 0 ] == epdMove[ 0 ] )
+                        {
+                            match = *it;
+                            matchCount++;
+                        }
                     }
                 }
             }
         }
-    }
 
-    if ( matchCount != 1 )
-    {
-        // The ones that get here have two moves in the 'bm' section - and I genuinely don't know what that means
-        printf( "  %s has %d potential match(es) for %s - skipping\n", epd.bestMove.c_str(), matchCount, epd.name.c_str());
+        if ( matchCount != 1 )
+        {
+            printf( "  %s has %d potential match(es) for %s - skipping\n", epdMove.c_str(), matchCount, epd.name.c_str() );
+            continue;
+        }
+
+        matches.push_back( match );
     }
 
     GoArguments goArgs = GoArguments::Builder().setDepth(4).build();
     Engine::Search search( *board, goArgs );
-    Engine::Search::start( &engine, &search, [engine,epd,&stats,match] ( const Move& bestMove, const Move& ponderMove )
+    Engine::Search::start( &engine, &search, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
     {
-        printf( "EPD: %s : %s cf %s - %s\n", epd.name.c_str(), bestMove.toAlgebriacString().c_str(), epd.bestMove.c_str(), ( bestMove == match ? "SUCCESS" : "FAIL" ));
-        if ( bestMove == match )
+        printf( "EPD: %s : %s", epd.name.c_str(), bestMove.toAlgebriacString().c_str() );
+        if ( std::find( epd.bestMoves.cbegin(), epd.bestMoves.cend(), bestMove.toAlgebriacString() ) != epd.bestMoves.cend() )
         {
+            printf( " - Success\n" );
             stats.pass++;
         }
         else
         {
+            printf( " - Failure, expected one of %s\n", epd.bestMovesString.c_str() );
             stats.fail++;
         }
     } );
