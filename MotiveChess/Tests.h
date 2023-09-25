@@ -70,14 +70,17 @@ private:
     public:
         unsigned short pass;
         unsigned short fail;
-    };
 
-    static std::vector<EPD> winAtChess;
+        Stats() :
+            pass( 0 ),
+            fail( 0 )
+        {
+        }
+    };
 
     static void runSuite( const Engine& engine, const std::vector<Tests::EPD> epd, Tests::Stats& stats );
     static void runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats );
 
 public:
-    static void runFullSuite( const Engine& engine ); // TODO remove this when we can do it all from file
     static void runSuite( const Engine& engine, const std::string& filename );
 };
