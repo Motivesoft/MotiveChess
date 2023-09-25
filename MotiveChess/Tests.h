@@ -78,5 +78,6 @@ private:
     static void runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats );
 
 public:
-    static void runFullSuite( const Engine& engine );
+    static void runFullSuite( const Engine& engine ); // TODO remove this when we can do it all from file
+    static void runSuite( const Engine& engine, const std::string& filename );
 };

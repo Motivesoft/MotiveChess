@@ -1,5 +1,7 @@
 #include "Tests.h"
 
+#include <fstream>
+#include <iostream>
 #include <sstream>
 
 #include "Board.h"
@@ -218,6 +220,63 @@ void Tests::runFullSuite( const Engine& engine )
     printf( "Completed: %d/%d\n", stats.pass, (stats.pass + stats.fail) );
 }
 
+void Tests::runSuite( const Engine& engine, const std::string& filename )
+{
+    std::ifstream infile = std::ifstream( filename );
+    if ( !infile.is_open() )
+    {
+        fprintf( stderr, "Cannot read input file: %s", filename.c_str() );
+        return;
+    }
+
+    Tests::Stats stats;
+
+    std::string line;
+    while ( std::getline( infile, line ) )
+    {
+        std::string fen;
+        std::string bm;
+        std::string name;
+
+        size_t fenSeparator = line.find( "bm" );
+        if ( fenSeparator != std::string::npos )
+        {
+            fen = line.substr( 0, fenSeparator = 1 );
+
+            size_t bmSeparator = line.find( ";" );
+            if ( bmSeparator != std::string::npos )
+            {
+                bm = line.substr( fenSeparator, bmSeparator - fenSeparator - 1 );
+
+                size_t nameSeparator = line.find( "\"" );
+                if ( nameSeparator != std::string::npos )
+                {
+                    name = line.substr( nameSeparator );
+
+                    while ( name.ends_with( ";" ) || name.ends_with( "\n" ) )
+                    {
+                        name = name.substr( 0, name.length() - 1 );
+                    }
+
+                    runTest( engine, Tests::EPD( fen, bm, name ), stats);
+                }
+                else
+                {
+                    fprintf( stderr, "Malformed name portion in EPD: %s", line.c_str() );
+                }
+            }
+            else
+            {
+                fprintf( stderr, "Malformed bm portion in EPD: %s", line.c_str() );
+            }
+        }
+        else
+        {
+            fprintf( stderr, "Malformed FEN portion in EPD: %s", line.c_str() );
+        }
+    }
+}
+
 void Tests::runSuite( const Engine& engine, const std::vector<Tests::EPD> epdSuite, Tests::Stats& stats )
 {
     for ( std::vector<Tests::EPD>::const_iterator it = epdSuite.cbegin(); it != epdSuite.cend(); it++ )
@@ -305,7 +364,7 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
         matches.push_back( match );
     }
 
-    GoArguments goArgs = GoArguments::Builder().setDepth(4).build();
+    GoArguments goArgs = GoArguments::Builder().setDepth( 6 ).build();
     Engine::Search search( *board, goArgs );
     Engine::Search::start( &engine, &search, &search.stats, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
     {

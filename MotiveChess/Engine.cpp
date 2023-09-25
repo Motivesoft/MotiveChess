@@ -18,7 +18,8 @@
 #include "Tests.h"
 #include "Version.h"
 
-#define SHOW_LINES
+#undef SHOW_LINES
+#undef QUIESCE
 
 // Loggers from static methods with pointers to Engine
 #define DEBUG_P(engine,...) if( engine->debug && !engine->silent ){ engine->log( Engine::LogLevel::DEBUG, __VA_ARGS__ ); }
@@ -620,7 +621,36 @@ void Engine::testsCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing tests command" );
 
-    Tests::runFullSuite( engine );
+    std::string filenames = arguments;
+    std::string delimiter = " ";
+
+    while ( !filenames.empty() && ( filenames.starts_with( " " ) || filenames.starts_with( "\t" ) ) )
+    {
+        filenames = filenames.substr( 1 );
+    }
+    while ( !filenames.empty() && ( filenames.ends_with( " " ) || filenames.ends_with( "\t" ) ) )
+    {
+        filenames = filenames.substr( 0, filenames.length() - 1 );
+    }
+    if ( filenames.empty() )
+    {
+        ERROR_S( engine, "Missing filename(s)" );
+        return;
+    }
+
+    size_t pos = 0;
+    std::string filename;
+    while ( ( pos = filenames.find( delimiter ) ) != std::string::npos )
+    {
+        filename = filenames.substr( 0, pos );
+
+        Tests::runSuite( engine, filename );
+
+        filenames.erase( 0, pos + delimiter.length() );
+    }
+
+    // Run with the last one
+    Tests::runSuite( engine, filenames );
 }
 
 void Engine::waitCommand( Engine& engine, const std::string& arguments )
@@ -991,7 +1021,9 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++ )
         {
             // TODO delete this when we're happy
+#ifdef SHOW_LINES
             DEBUG_P( engine, "Considering %s", ( *it ).toString().c_str() );
+#endif
             auto startTime = std::chrono::steady_clock::now();
 
             search->board->applyMove( *it );
@@ -1017,7 +1049,9 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
             // TODO delete this when we're happy
             auto endTime = std::chrono::steady_clock::now();
             std::chrono::duration<double> diff = endTime - startTime;
+#ifdef SHOW_LINES
             DEBUG_P( engine, "  score for %s is %d (%.6f s) (%d ms)", ( *it ).toString().c_str(), score, diff, std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() );
+#endif
         }
 
         // TODO this probably isn't how we want to do it - especially if we're not doing a depth search
@@ -1247,7 +1281,6 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
         // Why? Win (+1), Loss (-1) or Stalemate (0)
         if ( score == 0 )
         {
-            //DEBUG( "Score 0 (stalemate) as %s with %s to play", asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
 #ifdef SHOW_LINES
             DEBUG( "3: %s scores %d", line.c_str(), score );
 #endif
@@ -1255,11 +1288,9 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
         }
         else
         {
-            DEBUG( "isTerminal returns %d for %s", score, line.c_str());
             if ( board.whiteToPlay() != asWhite )
             {
                 score = -score;
-                DEBUG( "  result corrected to %d to be relative to current player", score );
             }
 
 #ifdef SHOW_LINES
@@ -1291,7 +1322,6 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
     if ( stopThinking )
     {
         score = board.scorePosition( asWhite );
-        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
 #ifdef SHOW_LINES
         DEBUG( "1: %s scores %d", line.c_str(), score );
 #endif
@@ -1302,7 +1332,6 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
     if ( depth == 0 )
     {
         score = board.scorePosition( asWhite );
-        //DEBUG( "Score %d (depth 0 or stopThinking) as %s with %s to play", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black" );
 #ifdef SHOW_LINES
         DEBUG( "7: %s scores %d", line.c_str(), score );
 #endif
@@ -1324,19 +1353,22 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            INFO( "Considering %s at depth %d (maximising)", (line + " " + (*it).toString().c_str()).c_str(), depth);
-
+#ifdef SHOW_LINES
+            DEBUG( "Considering %s at depth %d (maximising)", (line + " " + (*it).toString().c_str()).c_str(), depth);
+#endif
             board.applyMove( *it );
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            //if ( depth == 1 && !( *it ).isQuiet() )
-            //{
-            //    // TODO make depth configurable or calculated
-            //    evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
-            //    DEBUG( "***** Back from Q (max) with %d", evaluation );
-            //}
-            //else
+#ifdef QUIESCE
+            if ( depth == 1 && !( *it ).isQuiet() )
+            {
+                // TODO make depth configurable or calculated
+                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+                //DEBUG( "***** Back from Q (max) with %d", evaluation );
+            }
+            else
+#endif
             {
                 evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
@@ -1353,7 +1385,9 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             }
             if ( score >= beta )
             {
+#ifdef SHOW_LINES
                 DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+#endif
                 stats->nodesExcluded += ( moves.size() - count );
                 break;
             }
@@ -1378,18 +1412,22 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
         Board::State undo = Board::State( board );
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
-            INFO( "Considering %s at depth %d (minimising)", (line + " " + ( *it ).toString().c_str()).c_str(), depth);
+#ifdef SHOW_LINES
+            DEBUG( "Considering %s at depth %d (minimising)", (line + " " + ( *it ).toString().c_str()).c_str(), depth);
+#endif
             board.applyMove( *it );
 
             // Go into a quiescent search if it looks sensible to do so
             short evaluation;
-            //if ( depth == 1 && !( *it ).isQuiet() )
-            //{
-            //    // TODO make depth configurable or calculated
-            //    evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
-            //    DEBUG( "***** Back from Q (min) with %d", evaluation );
-            //}
-            //else
+#ifdef QUIESCE
+            if ( depth == 1 && !( *it ).isQuiet() )
+            {
+                // TODO make depth configurable or calculated
+                evaluation = quiesce( board, 4, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );// TODO quiesce
+                //DEBUG( "***** Back from Q (min) with %d", evaluation );
+            }
+            else
+#endif
             {
                 evaluation = minmax( board, stats, depth - 1, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
@@ -1406,7 +1444,9 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             }
             if ( score <= alpha )
             {
+#ifdef SHOW_LINES
                 DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+#endif
                 stats->nodesExcluded += ( moves.size() - count );
                 break;
             }
