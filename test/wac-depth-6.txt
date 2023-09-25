@@ -1,0 +1,206 @@
+C:\Projects\Motivesoft\MotiveChess\test>release
+MotiveChess 1.0.0.1
+tests
+INFO  : Processing tests command
+EPD: WAC.003 : Rg3 - Success
+EPD: WAC.004 : Qxh7+ - Success
+EPD: WAC.005 : Qc4+ - Success
+EPD: WAC.006 : Rb7 - Success
+EPD: WAC.007 : Ne3 - Success
+EPD: WAC.008 : Rf7 - Success
+EPD: WAC.010 : Rxh7 - Success
+EPD: WAC.011 : Bxc6 - Success
+EPD: WAC.012 : Qxf3+ - Success
+EPD: WAC.013 : Qxf8+ - Success
+EPD: WAC.014 : Qxh7+ - Success
+EPD: WAC.016 : Nc3 - Success
+EPD: WAC.017 : Ne5 - Success
+EPD: WAC.018 : Kf1 - Failure, expected Rh8
+EPD: WAC.019 : c6 - Success
+EPD: WAC.020 : Bb5 - Success
+EPD: WAC.021 : Qh6 - Success
+EPD: WAC.022 : Nxf7 - Success
+EPD: WAC.023 : g4 - Success
+EPD: WAC.024 : Bd4 - Success
+EPD: WAC.025 : Qh4+ - Success
+EPD: WAC.026 : Bf5 - Success
+EPD: WAC.027 : Qf8+ - Success
+EPD: WAC.028 : Qe1+ - Success
+EPD: WAC.029 : c6 - Success
+EPD: WAC.030 : Nxd6 - Success
+EPD: WAC.032 : Qd8+ - Success
+EPD: WAC.034 : Bg1 - Success
+EPD: WAC.035 : Rxh7+ - Success
+EPD: WAC.036 : Re1+ - Success
+EPD: WAC.037 : Nxd4+ - Success
+EPD: WAC.039 : Na4 - Success
+EPD: WAC.040 : Rc8 - Success
+EPD: WAC.042 : Ba5 - Success
+EPD: WAC.044 : dxc4 - Success
+EPD: WAC.045 : Qxa1 - Success
+EPD: WAC.046 : Nb1 - Failure, expected Nb5
+EPD: WAC.047 : Nxd4 - Success
+EPD: WAC.048 : Rb4 - Success
+EPD: WAC.050 : Rxb6+ - Success
+EPD: WAC.051 : Rg4+ - Success
+EPD: WAC.053 : Re1 - Success
+EPD: WAC.054 : Qh1+ - Success
+EPD: WAC.055 : Qxg7+ - Success
+EPD: WAC.056 : Bxf2+ - Success
+EPD: WAC.057 : Rf8+ - Success
+EPD: WAC.058 : Qf3+ - Failure, expected Qd1+
+EPD: WAC.059 : Nd5 - Success
+EPD: WAC.062 : Rxg3+ - Success
+EPD: WAC.063 : Nxf7 - Success
+EPD: WAC.064 : g4+ - Success
+EPD: WAC.065 : Ne7+ - Success
+EPD: WAC.066 : Qxe5 - Success
+EPD: WAC.067 : Rxd5 - Success
+EPD: WAC.068 : Qxe3 - Success
+EPD: WAC.070 : Na2+ - Success
+EPD: WAC.071 : Qh4 - Failure, expected Nxa7+
+EPD: WAC.072 : e6 - Success
+EPD: WAC.073 : Qd2 - Success
+EPD: WAC.075 : Qd6 - Success
+EPD: WAC.076 : Bxf6 - Success
+EPD: WAC.077 : Ng3 - Success
+EPD: WAC.078 : Ng5+ - Success
+EPD: WAC.080 : Be5 - Failure, expected Ra1
+EPD: WAC.081 : Bd6 - Success
+EPD: WAC.082 : Bh7+ - Success
+EPD: WAC.084 : Qg8+ - Success
+EPD: WAC.086 : Ng4+ - Success
+EPD: WAC.087 : f4+ - Failure, expected Rxe5
+EPD: WAC.088 : Rxg2+ - Success
+EPD: WAC.090 : Bh4 - Failure, expected Nxg7
+EPD: WAC.091 : Nc2 - Failure, expected Be6
+EPD: WAC.092 : Bxg4 - Success
+EPD: WAC.093 : Bh6 - Success
+EPD: WAC.094 : e4+ - Success
+EPD: WAC.095 : Ng4+ - Success
+EPD: WAC.097 : Qa8+ - Success
+EPD: WAC.098 : Nxe4 - Success
+EPD: WAC.099 : Rh5 - Success
+EPD: WAC.100 : Be3 - Success
+EPD: WAC.101 : a6 - Failure, expected Bc3
+EPD: WAC.103 : Qxg6+ - Success
+EPD: WAC.107 : Nb5 - Success
+EPD: WAC.108 : Qe5 - Success
+EPD: WAC.109 : c3 - Success
+EPD: WAC.110 : Be3 - Success
+EPD: WAC.111 : Qd1+ - Failure, expected Qf1+
+EPD: WAC.112 : Rxe6 - Success
+EPD: WAC.113 : Qxf6 - Success
+EPD: WAC.114 : Bxh7+ - Success
+EPD: WAC.115 : Nd6 - Success
+EPD: WAC.116 : Rd2 - Success
+EPD: WAC.117 : Ne4 - Success
+EPD: WAC.118 : Rh4 - Success
+EPD: WAC.119 : Nf2+ - Failure, expected Qxd3
+EPD: WAC.121 : Bxf3+ - Success
+EPD: WAC.122 : Rxf1+ - Success
+EPD: WAC.124 : Rd1+ - Failure, expected g3
+EPD: WAC.125 : Nf4 - Failure, expected Bxd4+
+EPD: WAC.126 : Rxc6+ - Success
+EPD: WAC.127 : Rxb7 - Success
+EPD: WAC.128 : Qg6 - Success
+EPD: WAC.129 : Bf3 - Success
+EPD: WAC.130 : Qh8 - Failure, expected Qh6
+EPD: WAC.133 : Bh4 - Success
+EPD: WAC.134 : Rd1+ - Success
+EPD: WAC.135 : h6 - Failure, expected Nd4
+EPD: WAC.137 : Rd7 - Success
+EPD: WAC.138 : h5 - Success
+EPD: WAC.139 : Nf6+ - Success
+EPD: WAC.140 : Rc7 - Success
+EPD: WAC.141 : Kf1 - Failure, expected Qxf4
+EPD: WAC.143 : Rxh6+ - Success
+EPD: WAC.144 : Bxe2 - Failure, expected d3
+EPD: WAC.147 : Nxg4 - Success
+EPD: WAC.148 : Rxg7 - Success
+EPD: WAC.149 : Bxg2 - Success
+EPD: WAC.151 : h5 - Failure, expected Nc3
+EPD: WAC.152 : Ne4 - Success
+EPD: WAC.154 : Qxf7+ - Success
+EPD: WAC.155 : d6 - Success
+EPD: WAC.156 : Qxh6+ - Success
+EPD: WAC.157 : Ne7+ - Success
+EPD: WAC.159 : Ne6+ - Success
+EPD: WAC.162 : Bd5 - Success
+EPD: WAC.163 : cxd5 - Failure, expected Qg2+
+EPD: WAC.164 : Rxc4+ - Success
+EPD: WAC.165 : Re2 - Success
+EPD: WAC.166 : d4 - Success
+EPD: WAC.168 : Qd2+ - Success
+EPD: WAC.169 : Bh6 - Success
+EPD: WAC.170 : Qxc4 - Success
+EPD: WAC.171 : Bh6+ - Success
+EPD: WAC.173 : Qh6+ - Success
+EPD: WAC.175 : Nh5 - Success
+EPD: WAC.178 : Qxh7+ - Failure, expected Nxe6
+EPD: WAC.180 : Nxd5 - Success
+EPD: WAC.181 : Ng4 - Success
+EPD: WAC.182 : Qh5 - Success
+EPD: WAC.187 : Nh3+ - Success
+EPD: WAC.188 : Qg7+ - Success
+EPD: WAC.190 : Bh3 - Success
+EPD: WAC.192 : Nd3+ - Success
+EPD: WAC.194 : f4 - Failure, expected Nh6+
+EPD: WAC.195 : g3 - Success
+EPD: WAC.196 : Nb4 - Success
+EPD: WAC.197 : Qf1+ - Success
+EPD: WAC.198 : Rd3 - Success
+EPD: WAC.200 : Bxf6 - Success
+EPD: WAC.201 : Ra7 - Success
+EPD: WAC.202 : Rxb8 - Failure, expected Rxa2
+EPD: WAC.203 : Qh6 - Success
+EPD: WAC.204 : Rxe5 - Success
+EPD: WAC.205 : Qxg5 - Success
+EPD: WAC.206 : Rc6 - Success
+EPD: WAC.207 : f4 - Failure, expected Qxg7+
+EPD: WAC.208 : Kh1 - Failure, expected Bf7+
+EPD: WAC.210 : Rh1 - Success
+EPD: WAC.212 : Qh7 - Failure, expected Qxg7+
+EPD: WAC.213 : Bg5 - Failure, expected Rxh7+
+EPD: WAC.215 : Qh7+ - Success
+EPD: WAC.219 : Qf1+ - Success
+EPD: WAC.220 : Ng5 - Failure, expected Qxf1+
+EPD: WAC.222 : bxa3 - Failure, expected Bf6
+EPD: WAC.227 : d5 - Success
+EPD: WAC.228 : Bxe4 - Success
+EPD: WAC.231 : Rxd7 - Failure, expected Bg5
+EPD: WAC.236 : Bxh3+ - Failure, expected Rc1
+EPD: WAC.237 : Rc5+ - Failure, expected Rc1+
+EPD: WAC.238 : Bxb7 - Success
+EPD: WAC.240 : Qd2 - Failure, expected Qxc6
+EPD: WAC.242 : Rxd7 - Success
+EPD: WAC.250 : Re1 - Failure, expected Re8+
+EPD: WAC.253 : Qe8+ - Success
+EPD: WAC.254 : Nxh3 - Success
+EPD: WAC.255 : Rxg6+ - Failure, expected Rfxg6+
+EPD: WAC.256 : Nf5 - Success
+EPD: WAC.257 : Rxd4 - Success
+EPD: WAC.258 : Bxg6 - Success
+EPD: WAC.260 : Nc4 - Failure, expected Qe6+
+EPD: WAC.262 : Bf8 - Failure, expected Rh6
+EPD: WAC.263 : Qg8+ - Success
+EPD: WAC.265 : Qxe4 - Failure, expected exf6
+EPD: WAC.266 : Bg3 - Failure, expected Rxh2+
+EPD: WAC.267 : Nc7+ - Success
+EPD: WAC.269 : axb4 - Success
+EPD: WAC.270 : Qg4 - Success
+EPD: WAC.271 : Rd6 - Success
+EPD: WAC.272 : g3 - Failure, expected Bxc5
+EPD: WAC.278 : Qe3 - Failure, expected Bf7+
+EPD: WAC.281 : Rxh7+ - Success
+EPD: WAC.282 : Rh8+ - Success
+EPD: WAC.283 : Ng5 - Success
+EPD: WAC.286 : Rxd5+ - Success
+EPD: WAC.288 : Ng3 - Failure, expected Nf6+
+EPD: WAC.289 : Qe5 - Success
+EPD: WAC.292 : d6+ - Success
+EPD: WAC.293 : Ng5 - Failure, expected Nfg5
+EPD: WAC.295 : Rxd5+ - Success
+EPD: WAC.298 : Qh8+ - Success
+EPD: WAC.300 : g6 - Success
+Completed: 159/201

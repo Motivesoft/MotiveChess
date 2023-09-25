@@ -172,14 +172,15 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
     Engine::Search::start( &engine, &search, &search.stats, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
     {
         printf( "EPD: %s : %s", epd.name.c_str(), bestMove.toAlgebriacString().c_str() );
-        if ( std::find( epd.bestMoves.cbegin(), epd.bestMoves.cend(), bestMove.toAlgebriacString() ) != epd.bestMoves.cend() )
+
+        if ( std::find( matches.cbegin(), matches.cend(), bestMove ) != matches.cend() )
         {
-            printf( " - Success\n" );
+            printf( " - Success X\n" );
             stats.pass++;
         }
-        else if ( epd.bestMoves.size() == 1 )
+        else if ( matches.size() == 1 )
         {
-            printf( " - Failure, expected %s\n", epd.bestMovesString.c_str() );
+            printf( " - Failure, expected %s (%s)\n", epd.bestMovesString.c_str(), matches[0].toString().c_str() );
             stats.fail++;
         }
         else 

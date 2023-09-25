@@ -1383,7 +1383,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             {
                 alpha = score;
             }
-            if ( score >= beta )
+            if ( score >= beta ) // TODO try with if(beta<=alpha) as per https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
             {
 #ifdef SHOW_LINES
                 DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
@@ -1442,7 +1442,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, short alphaInput,
             {
                 beta = score;
             }
-            if ( score <= alpha )
+            if ( score <= alpha ) // TODO try with if(beta<=alpha) as per https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
             {
 #ifdef SHOW_LINES
                 DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
