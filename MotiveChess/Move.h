@@ -132,7 +132,7 @@ public:
         return moveBits & CHECKING_MOVE;
     }
 
-    inline bool isUncheckingMove()
+    inline bool isUncheckingMove() const
     {
         return moveBits & UNCHECKING_MOVE;
     }
