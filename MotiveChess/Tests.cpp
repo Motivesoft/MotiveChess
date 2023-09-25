@@ -175,7 +175,7 @@ void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& 
 
         if ( std::find( matches.cbegin(), matches.cend(), bestMove ) != matches.cend() )
         {
-            printf( " - Success X\n" );
+            printf( " - Success\n" );
             stats.pass++;
         }
         else if ( matches.size() == 1 )
