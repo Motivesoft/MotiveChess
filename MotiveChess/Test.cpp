@@ -12,7 +12,7 @@ void Test::runSuite( const Engine& engine, const std::string& filename )
     std::ifstream infile = std::ifstream( filename );
     if ( !infile.is_open() )
     {
-        fprintf( stderr, "Cannot read input file: %s", filename.c_str() );
+        fprintf( stderr, "Cannot read input file: %s\n", filename.c_str() );
         return;
     }
 

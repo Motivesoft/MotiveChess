@@ -1,5 +1,11 @@
 ﻿#include "MotiveChess.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#elif __linux__
+#include <unistd.h>
+#endif
+
 #include "Version.h"
 
 int main( int argc, char** argv )
@@ -14,8 +20,20 @@ int main( int argc, char** argv )
 
 #ifdef _WIN32
 	std::string switchPrefix = "-";
+
+	// TODO remove this
+	TCHAR cwd[MAX_PATH];
+	DWORD a = GetCurrentDirectory( MAX_PATH, cwd );
+	printf( "CWD: %s\n", cwd );
 #elif __linux__
 	std::string switchPrefix = "--";
+
+	// TODO remove this
+	char cwd[ PATH_MAX ];
+	if ( getcwd( cwd, sizeof( cwd ) ) != NULL )
+	{
+		printf( "CWD: %s", cwd );
+	}
 #endif
 
 	Engine engine;
