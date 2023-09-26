@@ -58,6 +58,15 @@ void Board::getMoves( std::vector<Move>& moves )
     // King (including castling, castling flag set)
     getKingMoves( moves, bitboardPieceIndex + KING, accessibleSquares, attackPieces );
 
+#ifdef SET_CHECK_FLAG
+    bool uncheckingMove = false;
+    // Essentially, are we currently in check before making our move
+    if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], whiteToMove ) )
+    {
+        uncheckingMove = true;
+    }
+#endif
+
     // TODO is the king in check after any of these moves?
     Board::State state( this );
     for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
@@ -66,9 +75,17 @@ void Board::getMoves( std::vector<Move>& moves )
 
 #ifdef SET_CHECK_FLAG
         // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+
+        // Are we putting our oppenent into check?
         if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
         {
             ( *it ).setCheckingMove();
+        }
+
+        // Are we getting ourselves out of check
+        if ( uncheckingMove )
+        {
+            ( *it ).setUncheckingMove();
         }
 #endif
 
@@ -92,6 +109,10 @@ void Board::getMoves( std::vector<Move>& moves )
         {
             return a.isCheckingMove();
         }
+        if ( a.isUncheckingMove() != b.isUncheckingMove() ) // includes en passant
+        {
+            return a.isUncheckingMove();
+        }
 #endif
         if ( a.isCapture() != b.isCapture() ) // includes en passant
         {
@@ -104,9 +125,9 @@ void Board::getMoves( std::vector<Move>& moves )
         else
         {
             // Will be 0 (no promotion) or a promotion piece (q,r,b,n) where we want q first
-            if ( a.getPromotion() != b.getPromotion() )
+            if ( a.getPromotionPiece() != b.getPromotionPiece() )
             {
-                return a.getPromotion() > b.getPromotion();
+                return a.getPromotionPiece() > b.getPromotionPiece();
             }
         }
         if ( a.isCastling() != b.isCastling() )
@@ -135,7 +156,7 @@ void Board::applyMove( const Move& move )
 
     const unsigned short from = move.getFrom();
     const unsigned short to = move.getTo();
-    const unsigned long promotion = move.getPromotion();
+    const unsigned long promotion = move.getPromotionPiece();
 
     const unsigned long long fromBit = 1ull << move.getFrom();
     const unsigned long long toBit = 1ull << move.getTo();
@@ -666,14 +687,14 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
             // Check whether any are elegible to make the extended move (e.g. e2e4) or promote
             if ( rankFrom == promotionRankFrom )
             {
-                moves.emplace_back( index, destination, Move::KNIGHT );
-                moves.emplace_back( index, destination, Move::BISHOP );
-                moves.emplace_back( index, destination, Move::ROOK );
-                moves.emplace_back( index, destination, Move::QUEEN );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::KNIGHT );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::BISHOP );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::ROOK );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::QUEEN );
             }
             else
             {
-                moves.emplace_back( index, destination );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN );
 
                 if ( rankFrom == homeRankFrom )
                 {
@@ -699,7 +720,7 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
             possibleMoves ^= 1ull << destination;
 
             // No need to check promotion here as this is only for pawns on their home rank
-            moves.emplace_back( index, destination );
+            moves.emplace_back( index, destination, Move::MOVING_PAWN );
         }
     }
 
@@ -722,14 +743,14 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
             if ( rankFrom == promotionRankFrom )
             {
-                moves.emplace_back( index, destination, Move::KNIGHT | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::BISHOP | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::ROOK | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::QUEEN | Move::CAPTURE );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::KNIGHT | Move::CAPTURE );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::BISHOP | Move::CAPTURE );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::ROOK | Move::CAPTURE );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::QUEEN | Move::CAPTURE );
             }
             else
             {
-                moves.emplace_back( index, destination, Move::CAPTURE | (destinationIndex == enPassantIndex ? Move::EP_CAPTURE : 0) );
+                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::CAPTURE | (destinationIndex == enPassantIndex ? Move::EP_CAPTURE : 0) );
             }
         }
     }
@@ -757,7 +778,7 @@ void Board::getKnightMoves( std::vector<Move>& moves, const unsigned short& piec
 
             possibleMoves ^= 1ull << destination;
 
-            moves.emplace_back( index, destination, (destinationIndex & attackPieces) ? Move::CAPTURE : 0 );
+            moves.emplace_back( index, destination, Move::MOVING_KNIGHT | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
         }
     }
 }
@@ -772,11 +793,11 @@ void Board::getBishopMoves( std::vector<Move>& moves, const unsigned short& piec
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
     }
 }
 
@@ -790,11 +811,11 @@ void Board::getRookMoves( std::vector<Move>& moves, const unsigned short& pieceI
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
     }
 }
 
@@ -808,15 +829,15 @@ void Board::getQueenMoves( std::vector<Move>& moves, const unsigned short& piece
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
 
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
+        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
     }
 }
 
@@ -841,7 +862,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
             possibleMoves ^= 1ull << destination;
 
-            moves.emplace_back( index, destination, ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 );
+            moves.emplace_back( index, destination, Move::MOVING_KING | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
         }
 
         // Check whether castling is a possibility
@@ -859,7 +880,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                     // Test for the king travelling through check
                     if ( !isAttacked( 0b01110000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index + 2, Move::CASTLING_KSIDE );
+                        moves.emplace_back( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE );
                     }
                 }
             }
@@ -871,7 +892,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b00011100, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index - 2, Move::CASTLING_QSIDE );
+                        moves.emplace_back( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE );
                     }
                 }
             }
@@ -886,7 +907,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b0111000000000000000000000000000000000000000000000000000000000000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index + 2, Move::CASTLING_KSIDE );
+                        moves.emplace_back( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE );
                     }
                 }
             }
@@ -898,7 +919,7 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b0001110000000000000000000000000000000000000000000000000000000000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index - 2, Move::CASTLING_QSIDE );
+                        moves.emplace_back( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE );
                     }
                 }
             }
@@ -987,7 +1008,7 @@ bool Board::isAttacked( const unsigned long& index, const unsigned long long& at
 
 // Pass a scanner in here so that we can look either forward or reverse to make sure we check the closest attacker/blocker and
 // don't waste time checking those further away
-void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner )
+void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner )
 {
     unsigned long destination;
 
@@ -1018,7 +1039,7 @@ void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& 
 
         possibleMoves ^= 1ull << destination;
 
-        moves.emplace_back( index, destination, ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 );
+        moves.emplace_back( index, destination, piece | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
     }
 }
 

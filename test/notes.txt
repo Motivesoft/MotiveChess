@@ -1,0 +1,31 @@
+minmax(board,depth,...)
+  if terminal return eval
+  if depth 0 return eval
+  for each move in board.moves
+    minmax board.make(move),depth-1
+
+
+NEW
+
+quiesce(board,depth,...)
+  if terminal return eval
+  if depth 0 return eval
+  for each move in board.moves // TODO all moves or is !quiet ones enough?
+    quiesce board.make(move),qdepth-1
+
+minmax(board,depth,...)
+  if terminal return eval
+  if depth 0 return eval
+  for each move in board.moves
+    if depth 1 // ie zero during the next recursion
+      if move.quiet
+      	minmax board.make(move),depth-1
+      else
+        quiesce board.make(move),qdepth
+    else
+      minmax board.make(move),depth-1
+
+
+OR
+iterative-deepening
+	1ply search with ab, sort moves, 2ply search with ab, ...
