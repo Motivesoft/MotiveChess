@@ -21,13 +21,16 @@ int main( int argc, char** argv )
 #ifdef _WIN32
 	std::string switchPrefix = "-";
 
+#ifdef _DEBUG
 	// TODO remove this
 	TCHAR cwd[MAX_PATH];
 	DWORD a = GetCurrentDirectory( MAX_PATH, cwd );
 	printf( "CWD: %s\n", cwd );
+#endif
 #elif __linux__
 	std::string switchPrefix = "--";
 
+#ifdef _DEBUG
 	// TODO remove this
 	char cwd[ PATH_MAX ];
 	if ( getcwd( cwd, sizeof( cwd ) ) != NULL )
@@ -35,6 +38,8 @@ int main( int argc, char** argv )
 		printf( "CWD: %s", cwd );
 	}
 #endif
+#endif
+
 
 	Engine engine;
 	if ( processCommandLine( engine, switchPrefix, args ) )

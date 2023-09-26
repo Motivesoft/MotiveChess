@@ -26,6 +26,8 @@ endif()
 
 # TODO: Add tests and install targets if needed.
 
+target_compile_definitions(MotiveChess PUBLIC "$<$<CONFIG:DEBUG>:_DEBUG>")
+
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
