@@ -1443,7 +1443,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
                 if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
                 {
                     quiescent = true;
-                    depth = 5;
+                    depth = 6;
                 }
                 evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
             }
