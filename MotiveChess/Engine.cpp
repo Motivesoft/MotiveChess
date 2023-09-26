@@ -1374,13 +1374,19 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             else
 #endif
             {
-                if ( quiescent && ( *it ).isQuiet() ) continue;
-                if ( depth == 1 && !quiescent && !(*it).isQuiet() )
+                if ( quiescent && ( *it ).isQuiet() )
                 {
-                    quiescent = true;
-                    depth = 5;
+                    evaluation = board.scorePosition( asWhite );
                 }
-                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                else
+                {
+                    if ( depth == 1 && !quiescent && !(*it).isQuiet() )
+                    {
+                        quiescent = true;
+                        depth = 5;
+                    }
+                    evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                }
             }
 
             board.unmakeMove( undo );
@@ -1439,13 +1445,19 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             else
 #endif
             {
-                if ( quiescent && ( *it ).isQuiet() ) continue;
-                if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
+                if ( quiescent && ( *it ).isQuiet() )
                 {
-                    quiescent = true;
-                    depth = 6;
+                    evaluation = board.scorePosition( asWhite );
                 }
-                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                else
+                {
+                    if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
+                    {
+                        quiescent = true;
+                        depth = 6;
+                    }
+                    evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                }
             }
 
             board.unmakeMove( undo );
