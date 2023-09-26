@@ -5,7 +5,18 @@
 class Move
 {
 private:
+#if _DEBUG
+    char moveRepresentation[6];
+#endif
+
     unsigned long moveBits;
+
+    /// <summary>
+    /// Produces a string representation of the move.
+    /// Internal function called by toString or - in debug builds - the constructor
+    /// </summary>
+    /// <returns></returns>
+    std::string asString() const;
 
 public:
     static const unsigned long FROM_MASK;
@@ -152,7 +163,17 @@ public:
         return moveBits |= UNCHECKING_MOVE;
     }
 
+    /// <summary>
+    /// Returns a string representation of the move which, in debug builds, may have been pre-constructed
+    /// </summary>
+    /// <returns></returns>
     std::string toString() const;
+
+    /// <summary>
+    /// Return an algebraic representation of the move (Nf3).
+    /// This will not be smart enough to produce differentiating strings for similar looking moves such as rfe1 or r8a5
+    /// </summary>
+    /// <returns></returns>
     std::string toAlgebriacString() const;
 };
 
