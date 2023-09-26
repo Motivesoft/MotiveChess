@@ -30,4 +30,5 @@ target_compile_definitions(MotiveChess PUBLIC "$<$<CONFIG:DEBUG>:_DEBUG>")
 
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set_target_properties(${BUILD_TARGET} PROPERTIES LINK_FLAGS "/PROFILE")
 endif()

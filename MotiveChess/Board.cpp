@@ -58,14 +58,12 @@ void Board::getMoves( std::vector<Move>& moves )
     // King (including castling, castling flag set)
     getKingMoves( moves, bitboardPieceIndex + KING, accessibleSquares, attackPieces );
 
-#ifdef SET_CHECK_FLAG
     bool uncheckingMove = false;
     // Essentially, are we currently in check before making our move
     if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], whiteToMove ) )
     {
         uncheckingMove = true;
     }
-#endif
 
     // TODO is the king in check after any of these moves?
     Board::State state( this );
@@ -112,11 +110,11 @@ void Board::getMoves( std::vector<Move>& moves )
         {
             return a.isCheckingMove();
         }
+#endif
         if ( a.isUncheckingMove() != b.isUncheckingMove() ) // includes en passant
         {
             return a.isUncheckingMove();
         }
-#endif
         if ( a.isCapture() != b.isCapture() ) // includes en passant
         {
             return a.isCapture();
@@ -1078,7 +1076,7 @@ bool Board::isTerminal( short& score )
     moves.reserve( 256 );
     getMoves( moves );
 
-    if ( moves.size() == 0 )
+    if ( moves.empty() )
     {
         unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
         if ( isAttacked( king, whiteToMove ) )
