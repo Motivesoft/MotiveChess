@@ -1068,7 +1068,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
 
     if ( !engine->quitting ) 
     {
-        DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString(), bestScore );
+        DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString().c_str(), bestScore);
         
         bestMoveHandler( bestMove, ponderMove );
     }
