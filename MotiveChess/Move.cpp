@@ -72,7 +72,7 @@ Move::Move( const char* moveString )
     moveBits = ( from << 6 ) | to | promotion;
 
 #if _DEBUG
-    strcpy_s( moveRepresentation, sizeof moveRepresentation, toString().c_str() );
+    strcpy_s( moveRepresentation, sizeof moveRepresentation, asString().c_str() );
 #endif
 }
 

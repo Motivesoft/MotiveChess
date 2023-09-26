@@ -15,7 +15,7 @@
 #include "GoArguments.h"
 #include "Move.h"
 #include "Perft.h"
-#include "Tests.h"
+#include "Test.h"
 #include "Version.h"
 
 #undef SHOW_LINES
@@ -56,7 +56,7 @@ std::map<const std::string, Engine::CommandHandler> Engine::commandHandlers
 
     // Custom commands
     { "perft", &Engine::perftCommand },
-    { "tests", &Engine::testsCommand },
+    { "test", &Engine::testCommand },
     { "wait", &Engine::waitCommand },
 };
 
@@ -617,7 +617,7 @@ void Engine::perftCommand( Engine& engine, const std::string& arguments )
     }
 }
 
-void Engine::testsCommand( Engine& engine, const std::string& arguments )
+void Engine::testCommand( Engine& engine, const std::string& arguments )
 {
     INFO_S( engine, "Processing tests command" );
 
@@ -645,7 +645,7 @@ void Engine::testsCommand( Engine& engine, const std::string& arguments )
         filename = filenames.substr( 0, pos );
 
         INFO_S( engine, "Running tests from: %s", filename.c_str() );
-        Tests::runSuite( engine, filename );
+        Test::runSuite( engine, filename );
 
         filenames.erase( 0, pos + delimiter.length() );
     }
@@ -653,7 +653,7 @@ void Engine::testsCommand( Engine& engine, const std::string& arguments )
     // Run with the last one
     filename = filenames;
     INFO_S( engine, "Running tests from: %s", filename.c_str() );
-    Tests::runSuite( engine, filename );
+    Test::runSuite( engine, filename );
 }
 
 void Engine::waitCommand( Engine& engine, const std::string& arguments )
@@ -1068,7 +1068,7 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
 
     if ( !engine->quitting ) 
     {
-        DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString(), bestScore );
+        DEBUG_P( engine, "Best move: %s. Score %d", bestMove.toString().c_str(), bestScore);
         
         bestMoveHandler( bestMove, ponderMove );
     }
@@ -1374,13 +1374,19 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             else
 #endif
             {
-                if ( quiescent && ( *it ).isQuiet() ) continue;
-                if ( depth == 1 && !quiescent && !(*it).isQuiet() )
+                if ( quiescent && ( *it ).isQuiet() )
                 {
-                    quiescent = true;
-                    depth = 5;
+                    evaluation = board.scorePosition( asWhite );
                 }
-                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                else
+                {
+                    if ( depth == 1 && !quiescent && !(*it).isQuiet() )
+                    {
+                        quiescent = true;
+                        depth = 5;
+                    }
+                    evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                }
             }
 
             board.unmakeMove( undo );
@@ -1439,13 +1445,19 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             else
 #endif
             {
-                if ( quiescent && ( *it ).isQuiet() ) continue;
-                if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
+                if ( quiescent && ( *it ).isQuiet() )
                 {
-                    quiescent = true;
-                    depth = 6;
+                    evaluation = board.scorePosition( asWhite );
                 }
-                evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                else
+                {
+                    if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
+                    {
+                        quiescent = true;
+                        depth = 6;
+                    }
+                    evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
+                }
             }
 
             board.unmakeMove( undo );

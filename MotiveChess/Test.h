@@ -5,7 +5,7 @@
 
 #include "Engine.h"
 
-class Tests
+class Test
 {
 private:
     class EPD
@@ -78,8 +78,8 @@ private:
         }
     };
 
-    static void runSuite( const Engine& engine, const std::vector<Tests::EPD> epd, Tests::Stats& stats );
-    static void runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats );
+    static void runSuite( const Engine& engine, const std::vector<Test::EPD> epd, Test::Stats& stats );
+    static void runTest( const Engine& engine, const Test::EPD& epd, Test::Stats& stats );
 
 public:
     static void runSuite( const Engine& engine, const std::string& filename );
