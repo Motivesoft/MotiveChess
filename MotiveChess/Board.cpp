@@ -73,28 +73,31 @@ void Board::getMoves( std::vector<Move>& moves )
     {
         applyMove( *it );
 
-#ifdef SET_CHECK_FLAG
-        // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
-
-        // Are we putting our oppenent into check?
-        if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
-        {
-            ( *it ).setCheckingMove();
-        }
-
-        // Are we getting ourselves out of check
-        if ( uncheckingMove )
-        {
-            ( *it ).setUncheckingMove();
-        }
-#endif
-
         if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
         {
+            // Illegal move. Remove from list and iterate to the next move
             it = moves.erase( it );
         }
         else
         {
+            // Legal move - set any other attributes and then move the iterator forward naturally
+            
+            // Are we getting ourselves out of check
+            if ( uncheckingMove )
+            {
+                ( *it ).setUncheckingMove();
+            }
+
+#ifdef SET_CHECK_FLAG
+            // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+
+            // Are we putting our oppenent into check?
+            if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
+            {
+                ( *it ).setCheckingMove();
+            }
+#endif
+
             it++;
         }
 

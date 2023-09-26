@@ -70,14 +70,21 @@ Move::Move( const char* moveString )
     }
 
     moveBits = ( from << 6 ) | to | promotion;
+
+#if _DEBUG
+    strcpy_s( moveRepresentation, sizeof moveRepresentation, toString().c_str() );
+#endif
 }
 
 Move::Move( unsigned long from, unsigned long to, unsigned long promotion ) :
     moveBits( ( from << 6 ) | to | promotion )
 {
+#if _DEBUG
+    strcpy_s( moveRepresentation, sizeof moveRepresentation, asString().c_str() );
+#endif
 }
 
-std::string Move::toString() const
+std::string Move::asString() const
 {
     if ( isNullMove() )
     {
@@ -120,6 +127,15 @@ std::string Move::toString() const
     //if ( isCastling() ) move << "o";
 
     return move.str();
+}
+
+std::string Move::toString() const
+{
+#if _DEBUG
+    return moveRepresentation;
+#endif
+
+    return asString();
 }
 
 std::string Move::toAlgebriacString() const
