@@ -1,4 +1,4 @@
-#include "Tests.h"
+#include "Test.h"
 
 #include <fstream>
 #include <iostream>
@@ -7,7 +7,7 @@
 #include "Board.h"
 #include "Move.h"
 
-void Tests::runSuite( const Engine& engine, const std::string& filename )
+void Test::runSuite( const Engine& engine, const std::string& filename )
 {
     std::ifstream infile = std::ifstream( filename );
     if ( !infile.is_open() )
@@ -16,7 +16,7 @@ void Tests::runSuite( const Engine& engine, const std::string& filename )
         return;
     }
 
-    Tests::Stats stats;
+    Test::Stats stats;
 
     std::string line;
     while ( std::getline( infile, line ) )
@@ -59,7 +59,7 @@ void Tests::runSuite( const Engine& engine, const std::string& filename )
                         name = name.substr( 0, name.length() - 1 );
                     }
 
-                    runTest( engine, Tests::EPD( fen, bm, name ), stats);
+                    runTest( engine, Test::EPD( fen, bm, name ), stats);
                 }
                 else
                 {
@@ -80,15 +80,15 @@ void Tests::runSuite( const Engine& engine, const std::string& filename )
     printf( "Completed: success %d/%d (%0.2f%%)\n", stats.pass, ( stats.pass + stats.fail ), 100.0 * (float) stats.pass / (float)( stats.pass + stats.fail ) );
 }
 
-void Tests::runSuite( const Engine& engine, const std::vector<Tests::EPD> epdSuite, Tests::Stats& stats )
+void Test::runSuite( const Engine& engine, const std::vector<Test::EPD> epdSuite, Test::Stats& stats )
 {
-    for ( std::vector<Tests::EPD>::const_iterator it = epdSuite.cbegin(); it != epdSuite.cend(); it++ )
+    for ( std::vector<Test::EPD>::const_iterator it = epdSuite.cbegin(); it != epdSuite.cend(); it++ )
     {
         runTest( engine, *it, stats );
     }
 }
 
-void Tests::runTest( const Engine& engine, const Tests::EPD& epd, Tests::Stats& stats )
+void Test::runTest( const Engine& engine, const Test::EPD& epd, Test::Stats& stats )
 {
     //printf( "Name: %s\n", epd.name.c_str() );
 

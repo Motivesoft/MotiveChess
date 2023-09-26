@@ -177,7 +177,7 @@ public:
 
     // Command handlers - custom commands
     static void perftCommand( Engine& engine, const std::string& arguments );
-    static void testsCommand( Engine& engine, const std::string& arguments );
+    static void testCommand( Engine& engine, const std::string& arguments );
     static void waitCommand( Engine& engine, const std::string& arguments );
 
     // Broadcast - standard UCI commands
