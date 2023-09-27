@@ -1158,6 +1158,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         std::vector<Move> moves;
         moves.reserve( 256 );
         board.getMoves( moves );
+        board.sortMoves( moves );
 
         for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
         {
@@ -1216,6 +1217,7 @@ short Engine::quiesce( Board& board, short depth, short alphaInput, short betaIn
         std::vector<Move> moves;
         moves.reserve( 256 );
         board.getMoves( moves );
+        board.sortMoves( moves );
 
         for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
         {
@@ -1286,7 +1288,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
         if ( score == 0 )
         {
 #ifdef SHOW_LINES
-            DEBUG( "3: %s scores %d", line.c_str(), score );
+            DEBUG( "3: %s scores %d%s", line.c_str(), score, ( quiescent ? " quiescent" : "" ) );
 #endif
             return 0;
         }
@@ -1298,7 +1300,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             }
 
 #ifdef SHOW_LINES
-            DEBUG( "6: Score %d (terminal) as %s with %s to play from %s", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black", line.c_str());
+            DEBUG( "6: Score %d (terminal) as %s with %s to play from %s%s", score, asWhite ? "white" : "black", board.whiteToPlay() ? "white" : "black", line.c_str(), ( quiescent ? " quiescent" : "" ) );
 #endif
 
             // Give it a critially large value, but not quite at lowest/highest...
@@ -1317,7 +1319,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             }
 
 #ifdef SHOW_LINES
-            DEBUG( "2: %s scores %d", line.c_str(), score );
+            DEBUG( "2: %s scores %d%s", line.c_str(), score, ( quiescent ? " quiescent" : "" ) );
 #endif
             return score;
         }
@@ -1327,7 +1329,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
     {
         score = board.scorePosition( asWhite );
 #ifdef SHOW_LINES
-        DEBUG( "1: %s scores %d", line.c_str(), score );
+        DEBUG( "1: %s scores %d%s", line.c_str(), score, ( quiescent ? " quiescent" : "" ) );
 #endif
 
         return score;
@@ -1337,7 +1339,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
     {
         score = board.scorePosition( asWhite );
 #ifdef SHOW_LINES
-        DEBUG( "7: %s scores %d", line.c_str(), score );
+        DEBUG( "7: %s scores %d%s", line.c_str(), score, ( quiescent ? " quiescent" : "" ) );
 #endif
 
         return score;
@@ -1358,7 +1360,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
 #ifdef SHOW_LINES
-            DEBUG( "Considering %s at depth %d (maximising)", (line + " " + (*it).toString().c_str()).c_str(), depth);
+            DEBUG( "Considering %s at depth %d%s (maximising)", (line + " " + (*it).toString().c_str()).c_str(), depth, ( quiescent ? " quiescent" : "" ) );
 #endif
             board.applyMove( *it );
 
@@ -1402,7 +1404,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             if ( score >= beta ) // TODO try with if(beta<=alpha) as per https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
             {
 #ifdef SHOW_LINES
-                DEBUG( "Exiting maximising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting maximising after %d/%d%s moves considered", count, moves.size(), ( quiescent ? " quiescent" : "" ) );
 #endif
                 stats->nodesExcluded += ( moves.size() - count );
                 break;
@@ -1429,7 +1431,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
         for ( std::vector<Move>::const_iterator it = moves.cbegin(); it != moves.cend(); it++, count++ )
         {
 #ifdef SHOW_LINES
-            DEBUG( "Considering %s at depth %d (minimising)", (line + " " + ( *it ).toString().c_str()).c_str(), depth);
+            DEBUG( "Considering %s at depth %d%s (minimising)", (line + " " + ( *it ).toString().c_str()).c_str(), depth, ( quiescent ? " quiescent" : "" ) );
 #endif
             board.applyMove( *it );
 
@@ -1473,7 +1475,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
             if ( score <= alpha ) // TODO try with if(beta<=alpha) as per https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-4-alpha-beta-pruning/
             {
 #ifdef SHOW_LINES
-                DEBUG( "Exiting minimising after %d/%d moves considered", count, moves.size() );
+                DEBUG( "Exiting minimising after %d/%d%s moves considered", count, moves.size(), (quiescent ? " quiescent" : "") );
 #endif
                 stats->nodesExcluded += ( moves.size() - count );
                 break;
