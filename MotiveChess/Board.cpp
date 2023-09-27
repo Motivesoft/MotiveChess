@@ -1199,11 +1199,24 @@ short Board::scorePosition( bool scoreForWhite ) const
 // for the opponent and seen it as a loss
 bool Board::isTerminal( short& score )
 {
-    std::vector<Move> moves;
-    moves.reserve( 256 );
-    getMoves( moves );
+    const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
 
-    if ( moves.empty() )
+    bool hasMoves = false;
+
+    // This will be called if there are any legal moves in this position
+    auto collator = [&] ( unsigned long from, unsigned long to, unsigned long extraBits = 0 ) -> bool
+    {
+        hasMoves = true;
+
+        // We only needed this to be called once - we only want whether or not there are moves, not how
+        // many or what they are
+        return false;
+    };
+
+    getMoves( collator );
+
+    if ( !hasMoves )
     {
         unsigned long long king = bitboards[ ( whiteToMove ? WHITE : BLACK ) + KING ];
         if ( isAttacked( king, whiteToMove ) )
