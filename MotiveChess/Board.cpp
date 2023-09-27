@@ -22,7 +22,61 @@ const unsigned short Board::ROOK = 3;
 const unsigned short Board::QUEEN = 4;
 const unsigned short Board::KING = 5;
 
-void Board::getMoves( std::vector<Move>& moves )
+bool Board::getMoves( std::vector<Move>& moves )
+{
+    const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
+
+    bool uncheckingMove = false;
+
+    // Essentially, are we currently in check before making our move
+    if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], whiteToMove ) )
+    {
+        uncheckingMove = true;
+    }
+
+    // Save state to reapply later
+    Board::State state( this );
+
+    auto collator = [&] ( unsigned long from, unsigned long to, unsigned long extraBits = 0 ) -> bool
+    {
+        Move move( from, to, extraBits );
+
+        applyMove( move );
+
+        // If this is a legal move, set any other attributes and then move the iterator forward naturally
+        if ( !isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
+        {
+            // Are we getting ourselves out of check
+            if ( uncheckingMove )
+            {
+                move.setUncheckingMove();
+            }
+
+#ifdef SET_CHECK_FLAG
+            // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
+
+            // Are we putting our oppenent into check?
+            if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
+            {
+                move.setCheckingMove();
+            }
+#endif
+
+            // Keep the move
+            moves.push_back( move );
+        }
+
+        unmakeMove( state );
+
+        // Continue
+        return true;
+    };
+
+    return getMoves( collator );
+}
+
+bool Board::getMoves( MoveCollator collator )
 {
     const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
     const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
@@ -34,74 +88,47 @@ void Board::getMoves( std::vector<Move>& moves )
     const unsigned long long& attackPieces = whiteToMove ? blackPieces : whitePieces;
     const unsigned long long& accessibleSquares = bitboards[ EMPTY ] | attackPieces;
 
-    // normal piece logic for all pieces
-    // ep? done
-    // castling? done
-    // promotion? done
-    // TODO move legality test
-
     // Pawn (including ep capture, promotion)
-    getPawnMoves( moves, bitboardPieceIndex + PAWN, bitboards[ EMPTY ], attackPieces );
+    if ( !getPawnMoves( bitboardPieceIndex + PAWN, bitboards[ EMPTY ], attackPieces, collator ) )
+    {
+        return false;
+    }
 
     // Knight
-    getKnightMoves( moves, bitboardPieceIndex + KNIGHT, accessibleSquares, attackPieces );
+    if ( !getKnightMoves( bitboardPieceIndex + KNIGHT, accessibleSquares, attackPieces, collator ) )
+    {
+        return false;
+    }
 
     // Bishop + Queen
-    getBishopMoves( moves, bitboardPieceIndex + BISHOP, accessibleSquares, attackPieces, blockingPieces );
+    if ( !getBishopMoves( bitboardPieceIndex + BISHOP, accessibleSquares, attackPieces, blockingPieces, collator ) )
+    {
+        return false;
+    }
 
     // Rook (including castling flag set) + Queen
-    getRookMoves( moves, bitboardPieceIndex + ROOK, accessibleSquares, attackPieces, blockingPieces );
+    if ( !getRookMoves( bitboardPieceIndex + ROOK, accessibleSquares, attackPieces, blockingPieces, collator ) )
+    {
+        return false;
+    }
 
     // Queen
-    getQueenMoves( moves, bitboardPieceIndex + QUEEN, accessibleSquares, attackPieces, blockingPieces );
+    if ( !getQueenMoves( bitboardPieceIndex + QUEEN, accessibleSquares, attackPieces, blockingPieces, collator ) )
+    {
+        return false;
+    }
 
     // King (including castling, castling flag set)
-    getKingMoves( moves, bitboardPieceIndex + KING, accessibleSquares, attackPieces );
-
-    bool uncheckingMove = false;
-    // Essentially, are we currently in check before making our move
-    if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], whiteToMove ) )
+    if ( !getKingMoves( bitboardPieceIndex + KING, accessibleSquares, attackPieces, collator ) )
     {
-        uncheckingMove = true;
+        return false;
     }
 
-    // TODO is the king in check after any of these moves?
-    Board::State state( this );
-    for ( std::vector<Move>::iterator it = moves.begin(); it != moves.end(); )
-    {
-        applyMove( *it );
+    return true;
+}
 
-        if ( isAttacked( bitboards[ bitboardPieceIndex + KING ], !whiteToMove ) )
-        {
-            // Illegal move. Remove from list and iterate to the next move
-            it = moves.erase( it );
-        }
-        else
-        {
-            // Legal move - set any other attributes and then move the iterator forward naturally
-            
-            // Are we getting ourselves out of check
-            if ( uncheckingMove )
-            {
-                ( *it ).setUncheckingMove();
-            }
-
-#ifdef SET_CHECK_FLAG
-            // This is a bit crude, doing it here - but maybe this whole block needs to be done differently
-
-            // Are we putting our oppenent into check?
-            if ( isAttacked( bitboards[ opponentPieceIndex + KING ], whiteToMove ) )
-            {
-                ( *it ).setCheckingMove();
-            }
-#endif
-
-            it++;
-        }
-
-        unmakeMove( state );
-    }
-
+void Board::sortMoves( std::vector<Move>& moves )
+{
     // Sort the moves by contextual elements
     std::sort( moves.begin(), moves.end(), [&] ( Move a, Move b )
     {
@@ -658,8 +685,10 @@ void Board::State::apply( Board& board ) const
     board.fullMoveNumber = fullMoveNumber;
 }
 
-void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces )
+bool Board::getPawnMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator )
 {
+    static const unsigned long promotionPieces[] = { Move::KNIGHT, Move::BISHOP, Move::ROOK, Move::QUEEN };
+
     const unsigned short promotionRankFrom = whiteToMove ? 6 : 1;
     const unsigned short homeRankFrom = whiteToMove ? 1 : 6;
 
@@ -688,14 +717,20 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
             // Check whether any are elegible to make the extended move (e.g. e2e4) or promote
             if ( rankFrom == promotionRankFrom )
             {
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::KNIGHT );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::BISHOP );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::ROOK );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::QUEEN );
+                for ( unsigned short loop = 0; loop < 4; loop++ )
+                {
+                    if ( !moveCollator( index, destination, Move::MOVING_PAWN | promotionPieces[ loop ] ) )
+                    {
+                        return false;
+                    }
+                }
             }
             else
             {
-                moves.emplace_back( index, destination, Move::MOVING_PAWN );
+                if ( !moveCollator( index, destination, Move::MOVING_PAWN ) )
+                {
+                    return false;
+                }
 
                 if ( rankFrom == homeRankFrom )
                 {
@@ -721,7 +756,10 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
             possibleMoves ^= 1ull << destination;
 
             // No need to check promotion here as this is only for pawns on their home rank
-            moves.emplace_back( index, destination, Move::MOVING_PAWN );
+            if ( !moveCollator( index, destination, Move::MOVING_PAWN ) )
+            {
+                return false;
+            }
         }
     }
 
@@ -744,20 +782,28 @@ void Board::getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
             if ( rankFrom == promotionRankFrom )
             {
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::KNIGHT | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::BISHOP | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::ROOK | Move::CAPTURE );
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::QUEEN | Move::CAPTURE );
+                for ( unsigned short loop = 0; loop < 4; loop++ )
+                {
+                    if ( !moveCollator( index, destination, Move::MOVING_PAWN | Move::CAPTURE | promotionPieces[ loop ] ) )
+                    {
+                        return false;
+                    }
+                }
             }
             else
             {
-                moves.emplace_back( index, destination, Move::MOVING_PAWN | Move::CAPTURE | (destinationIndex == enPassantIndex ? Move::EP_CAPTURE : 0) );
+                if ( !moveCollator( index, destination, Move::MOVING_PAWN | Move::CAPTURE | ( destinationIndex == enPassantIndex ? Move::EP_CAPTURE : 0 ) ) )
+                {
+                    return false;
+                }
             }
         }
     }
+
+    return true;
 }
 
-void Board::getKnightMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces )
+bool Board::getKnightMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator )
 {
     unsigned long long pieces;
     unsigned long index;
@@ -779,12 +825,17 @@ void Board::getKnightMoves( std::vector<Move>& moves, const unsigned short& piec
 
             possibleMoves ^= 1ull << destination;
 
-            moves.emplace_back( index, destination, Move::MOVING_KNIGHT | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
+            if ( !moveCollator( index, destination, Move::MOVING_KNIGHT | ( ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 ) ) )
+            {
+                return false;
+            }
         }
     }
+
+    return true;
 }
 
-void Board::getBishopMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces )
+bool Board::getBishopMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator )
 {
     unsigned long long pieces;
     unsigned long index;
@@ -794,15 +845,29 @@ void Board::getBishopMoves( std::vector<Move>& moves, const unsigned short& piec
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
-        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
+        if ( !getDirectionalMoves( index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
 
-        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
+        if ( !getDirectionalMoves( index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_BISHOP, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void Board::getRookMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces )
+bool Board::getRookMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator )
 {
     unsigned long long pieces;
     unsigned long index;
@@ -812,15 +877,29 @@ void Board::getRookMoves( std::vector<Move>& moves, const unsigned short& pieceI
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
-        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
+        if ( !getDirectionalMoves( index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
 
-        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
+        if ( !getDirectionalMoves( index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_ROOK, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void Board::getQueenMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces )
+bool Board::getQueenMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator )
 {
     unsigned long long pieces;
     unsigned long index;
@@ -830,19 +909,45 @@ void Board::getQueenMoves( std::vector<Move>& moves, const unsigned short& piece
     {
         pieces ^= 1ull << index;
 
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward );
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getWestMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthEastMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getNorthWestMoveMask, scanForward, moveCollator ) )
+        {
+            return false;
+        }
 
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse );
-        getDirectionalMoves( moves, index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse );
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getEastMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthWestMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
+        if ( !getDirectionalMoves( index, Move::MOVING_QUEEN, attackPieces, blockingPieces, BitBoard::getSouthEastMoveMask, scanReverse, moveCollator ) )
+        {
+            return false;
+        }
     }
+
+    return true;
 }
 
-void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces )
+bool Board::getKingMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator )
 {
     unsigned long long pieces;
     unsigned long index;
@@ -863,7 +968,10 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
 
             possibleMoves ^= 1ull << destination;
 
-            moves.emplace_back( index, destination, Move::MOVING_KING | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
+            if ( !moveCollator( index, destination, Move::MOVING_KING | ( ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 ) ) )
+            {
+                return false;
+            }
         }
 
         // Check whether castling is a possibility
@@ -881,7 +989,10 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                     // Test for the king travelling through check
                     if ( !isAttacked( 0b01110000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE );
+                        if ( !moveCollator( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE ) )
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -893,7 +1004,10 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b00011100, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE );
+                        if ( !moveCollator( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE ) )
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -908,7 +1022,10 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b0111000000000000000000000000000000000000000000000000000000000000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE );
+                        if ( !moveCollator( index, index + 2, Move::MOVING_KING | Move::CASTLING_KSIDE ) )
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -920,12 +1037,17 @@ void Board::getKingMoves( std::vector<Move>& moves, const unsigned short& pieceI
                 {
                     if ( !isAttacked( 0b0001110000000000000000000000000000000000000000000000000000000000, whiteToMove ) )
                     {
-                        moves.emplace_back( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE );
+                        if ( !moveCollator( index, index - 2, Move::MOVING_KING | Move::CASTLING_QSIDE ) )
+                        {
+                            return false;
+                        }
                     }
                 }
             }
         }
     }
+
+    return true;
 }
 
 bool Board::isAttacked( unsigned long long mask, bool asWhite )
@@ -1009,7 +1131,7 @@ bool Board::isAttacked( const unsigned long& index, const unsigned long long& at
 
 // Pass a scanner in here so that we can look either forward or reverse to make sure we check the closest attacker/blocker and
 // don't waste time checking those further away
-void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner )
+bool Board::getDirectionalMoves( const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner, MoveCollator moveCollator )
 {
     unsigned long destination;
 
@@ -1040,8 +1162,13 @@ void Board::getDirectionalMoves( std::vector<Move>& moves, const unsigned long& 
 
         possibleMoves ^= 1ull << destination;
 
-        moves.emplace_back( index, destination, piece | (( destinationIndex & attackPieces ) ? Move::CAPTURE : 0) );
+        if ( !moveCollator( index, destination, piece | ( ( destinationIndex & attackPieces ) ? Move::CAPTURE : 0 ) ) )
+        {
+            return false;
+        }
     }
+
+    return true;
 }
 
 short Board::scorePosition( bool scoreForWhite ) const
@@ -1072,13 +1199,26 @@ short Board::scorePosition( bool scoreForWhite ) const
 // for the opponent and seen it as a loss
 bool Board::isTerminal( short& score )
 {
-    std::vector<Move> moves;
-    moves.reserve( 256 );
-    getMoves( moves );
+    const unsigned short bitboardPieceIndex = whiteToMove ? WHITE : BLACK;
+    const unsigned short opponentPieceIndex = whiteToMove ? BLACK : WHITE;
 
-    if ( moves.empty() )
+    bool hasMoves = false;
+
+    // This will be called if there are any legal moves in this position
+    auto collator = [&] ( unsigned long from, unsigned long to, unsigned long extraBits = 0 ) -> bool
     {
-        unsigned long long king = bitboards[ (whiteToMove ? WHITE : BLACK) + KING ];
+        hasMoves = true;
+
+        // We only needed this to be called once - we only want whether or not there are moves, not how
+        // many or what they are
+        return false;
+    };
+
+    getMoves( collator );
+
+    if ( !hasMoves )
+    {
+        unsigned long long king = bitboards[ ( whiteToMove ? WHITE : BLACK ) + KING ];
         if ( isAttacked( king, whiteToMove ) )
         {
             score = -1; // activeColor loses - in check with no legal escape

@@ -90,8 +90,6 @@ void Test::runSuite( const Engine& engine, const std::vector<Test::EPD> epdSuite
 
 void Test::runTest( const Engine& engine, const Test::EPD& epd, Test::Stats& stats )
 {
-    //printf( "Name: %s\n", epd.name.c_str() );
-
     // first things first, we need to change the piece notation for best move from (e.g. from Nc3 to b1c3)
     Board* board = Board::createBoard( epd.fen );
 
@@ -167,7 +165,10 @@ void Test::runTest( const Engine& engine, const Test::EPD& epd, Test::Stats& sta
         matches.push_back( match );
     }
 
-    GoArguments goArgs = GoArguments::Builder().setDepth( 6 ).build();
+    printf( "Name: %s\n", epd.name.c_str() );
+    printf( " FEN: %s\n", epd.fen.c_str() );
+
+    GoArguments goArgs = GoArguments::Builder().setDepth( 4 ).build();
     Engine::Search search( *board, goArgs );
     Engine::Search::start( &engine, &search, &search.stats, [engine,epd,&stats,matches] ( const Move& bestMove, const Move& ponderMove )
     {

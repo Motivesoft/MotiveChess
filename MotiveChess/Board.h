@@ -2,6 +2,7 @@
 
 #include <array>
 #include <bitset>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,6 +17,9 @@
 
 class Board
 {
+public:
+    typedef std::function<bool( unsigned long, unsigned long, unsigned long )> MoveCollator;
+
 private:
     static const unsigned short EMPTY;
     static const unsigned short WHITE;
@@ -129,12 +133,12 @@ private:
         bitboards[ replacingPiece ] ^= location;
     }
 
-    void getPawnMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces );
-    void getKnightMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces );
-    void getBishopMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces );
-    void getRookMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces );
-    void getQueenMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces );
-    void getKingMoves( std::vector<Move>& moves, const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces );
+    bool getPawnMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator );
+    bool getKnightMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator );
+    bool getBishopMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator );
+    bool getRookMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator );
+    bool getQueenMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, MoveCollator moveCollator );
+    bool getKingMoves( const unsigned short& pieceIndex, const unsigned long long& accessibleSquares, const unsigned long long& attackPieces, MoveCollator moveCollator );
 
     /// <summary>
     /// Returns true if any square indicated in the mask is attacked by the current opponent
@@ -176,7 +180,7 @@ private:
 #endif
     }
 
-    void getDirectionalMoves( std::vector<Move>& moves, const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner );
+    bool getDirectionalMoves( const unsigned long& index, const unsigned long piece, const unsigned long long& attackPieces, const unsigned long long& blockingPieces, DirectionMask directionMask, BitScanner bitScanner, MoveCollator moveCollator );
     bool isAttacked( const unsigned long& index, const unsigned long long& attackingPieces, DirectionMask directionMask, BitScanner bitScanner );
 
 public:
@@ -184,7 +188,10 @@ public:
 
     std::string toString() const;
 
-    void getMoves( std::vector<Move>& moves );
+    bool getMoves( std::vector<Move>& moves );
+    bool getMoves( MoveCollator moveCollator );
+
+    void sortMoves( std::vector<Move>& moves );
 
     class State
     {
