@@ -961,6 +961,8 @@ void Engine::Search::start( const Engine* engine, const Search* search, Stats* s
         moves.reserve( 256 );
          
         search->board->getMoves( moves );
+        search->board->sortMoves( moves );
+
         stats->nodesTotal += moves.size();
 
         // Filter on searchMoves, if there are any
@@ -1456,7 +1458,7 @@ short Engine::minmax( Board& board, Stats* stats, short depth, bool quiescent, s
                     if ( depth == 1 && !quiescent && !( *it ).isQuiet() )
                     {
                         quiescent = true;
-                        depth = 6;
+                        depth = 5;
                     }
                     evaluation = minmax( board, stats, depth - 1, quiescent, alpha, beta, !maximising, asWhite, line + " " + ( *it ).toString() );
                 }
